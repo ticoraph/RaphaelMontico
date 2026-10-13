@@ -1,16 +1,16 @@
 ---
-title: "Watt"
-slug: "watt"
+title: "Joule"
+slug: "joule"
 order: 4
 tags: ["React", "TypeScript", "FastAPI", "SQLite", "MLflow", "XGBoost", "Chronos2", "TimesFM", "Qwen3", "Google Cloud Run", "Firebase Hosting"]
 overview: "Plateforme énergétique qui agrège six sources domestiques, compare des modèles de prévision et publie tableaux de bord, forecasts et analyses LLM."
 ---
 
-# Watt : suivi et prévision de l'énergie domestique
+# Joule : suivi et prévision de l'énergie domestique
 
 ## Contexte
 
-[Watt](https://watt.tnera.fr) est une application que j'ai développée pour réunir ma consommation électrique, ma production solaire, la recharge du véhicule, des capteurs domestiques, la météo et les relevés d'eau. Elle remplace des exports dispersés par une série quotidienne commune, consultable et exploitable pour la prévision.
+[Joule] est une application que j'ai développée pour réunir ma consommation électrique, ma production solaire, la recharge du véhicule, des capteurs domestiques, la météo et les relevés d'eau. Elle remplace des exports dispersés par une série quotidienne commune, consultable et exploitable pour la prévision. Le code est disponible dans le [dépôt GitHub](https://github.com/ticoraph/Joule).
 
 Le produit associe un dashboard, des vues par source, du feature engineering, la comparaison de modèles de séries temporelles, un registre MLflow et un rapport d'analyse généré localement par un LLM.
 
@@ -57,7 +57,7 @@ GitHub Actions utilise Workload Identity Federation, sans clé JSON statique, po
 
 ## Impact
 
-Watt rend consultables au même endroit les consommations, puissances de pointe, coûts, production solaire, recharge, températures et précipitations depuis 2022. Les backtests de cinq approches sont comparables par MAE, RMSE, biais et MAPE; la prévision sélectionnée affiche son incertitude au lieu d'un unique chiffre.
+Joule rend consultables au même endroit les consommations, puissances de pointe, coûts, production solaire, recharge, températures et précipitations depuis 2022. Les backtests de cinq approches sont comparables par MAE, RMSE, biais et MAPE; la prévision sélectionnée affiche son incertitude au lieu d'un unique chiffre.
 
 Le serveur MLflow est accessible dans l'application déployée, tandis que le rapport Qwen explique les différences entre modèles sans envoyer les données domestiques à un service LLM distant. La sélection du modèle reste une décision humaine fondée sur les backtests, pas une promotion automatique déclenchée par la CI.
 

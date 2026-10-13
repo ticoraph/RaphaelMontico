@@ -1,16 +1,16 @@
 ---
-title: "Watt"
-slug: "watt"
+title: "Joule"
+slug: "joule"
 order: 4
 tags: ["React", "TypeScript", "FastAPI", "SQLite", "MLflow", "XGBoost", "Chronos2", "TimesFM", "Qwen3", "Google Cloud Run", "Firebase Hosting"]
 overview: "Energy platform that aggregates six household sources, compares forecasting models, and publishes dashboards, forecasts, and LLM analyses."
 ---
 
-# Watt: household energy tracking and forecasting
+# Joule: household energy tracking and forecasting
 
 ## Context
 
-[Watt](https://watt.tnera.fr) is an application I developed to bring together my electricity consumption, solar production, vehicle charging, home sensors, weather, and water readings. It replaces scattered exports with a shared daily time series that can be viewed and used for forecasting.
+[Joule] is an application I developed to bring together my electricity consumption, solar production, vehicle charging, home sensors, weather, and water readings. It replaces scattered exports with a shared daily time series that can be viewed and used for forecasting. The code is available in the [GitHub repository](https://github.com/ticoraph/Joule).
 
 The product combines a dashboard, source-specific views, feature engineering, time-series model comparisons, an MLflow registry, and an analysis report generated locally by an LLM.
 
@@ -57,7 +57,7 @@ GitHub Actions uses Workload Identity Federation, with no static JSON key, to bu
 
 ## Impact
 
-Watt makes consumption, peak power, costs, solar production, charging, temperatures, and precipitation since 2022 viewable in one place. Backtests for five approaches can be compared by MAE, RMSE, bias, and MAPE; the selected forecast displays its uncertainty rather than a single figure.
+Joule makes consumption, peak power, costs, solar production, charging, temperatures, and precipitation since 2022 viewable in one place. Backtests for five approaches can be compared by MAE, RMSE, bias, and MAPE; the selected forecast displays its uncertainty rather than a single figure.
 
 The MLflow server is accessible in the deployed application, while the Qwen report explains differences between models without sending household data to a remote LLM service. Model selection remains a human decision based on backtests, not an automatic promotion triggered by CI.
 
