@@ -8,10 +8,16 @@ on:
       - "backend/ingest/**"
   workflow_dispatch: {}
 
+env:
+  AWS_REGION: eu-central-1
+
 jobs:
   ingest:
     name: Run Ingestion Pipeline
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -25,10 +31,23 @@ jobs:
           cd backend
           pip install -r requirements.txt
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOYER_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Load secrets from SSM
+        # Same SSM parameters App Runner reads, so there is a single source of truth.
+        run: |
+          for name in DATABASE_URL OPENAI_API_KEY; do
+            value=$(aws ssm get-parameter --name "/raphaelmontico/$name" \
+              --with-decryption --query Parameter.Value --output text)
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
       - name: Run ingestion
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           cd backend
           python -m ingest

@@ -26,26 +26,28 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Run DB migrations
-        # Applied before the new image is deployed, so App Runner never serves
-        # code that expects a schema that isn't there yet. DATABASE_URL here is a
-        # GitHub Actions secret distinct from the secrets App Runner itself
-        # gets from Secrets Manager — this job runs in GH Actions, not in the
-        # App Runner container, so it needs its own way to reach Postgres
-        # (requires the DB to be network-reachable from the runner; see the infra repo).
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          OPENAI_API_KEY: unused-by-migrations
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          alembic upgrade head
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOYER_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run DB migrations
+        # Applied before the new image is deployed, so App Runner never serves
+        # code that expects a schema that isn't there yet. This job runs in GH
+        # Actions, not in the App Runner container, so it reads DATABASE_URL
+        # from the same SSM parameter App Runner uses (the DB must be
+        # network-reachable from the runner; see the infra repo).
+        env:
+          OPENAI_API_KEY: unused-by-migrations
+        run: |
+          DATABASE_URL=$(aws ssm get-parameter --name /raphaelmontico/DATABASE_URL \
+            --with-decryption --query Parameter.Value --output text)
+          echo "::add-mask::$DATABASE_URL"
+          export DATABASE_URL
+          cd backend
+          pip install -r requirements.txt
+          alembic upgrade head
 
       - name: Login to Amazon ECR
         id: ecr-login
@@ -69,6 +71,7 @@ jobs:
           ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY_NAME }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           aws apprunner update-service \
             --service-arn ${{ vars.APPRUNNER_SERVICE_ARN }} \
             --source-configuration '{
@@ -76,7 +79,19 @@ jobs:
                 "ImageIdentifier": "'"$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"'",
                 "ImageRepositoryType": "ECR",
                 "ImageConfiguration": {
-                  "Port": "8080"
+                  "Port": "8080",
+                  "RuntimeEnvironmentVariables": {
+                    "ALLOWED_ORIGINS": "https://raphaelmontico.fr,https://www.raphaelmontico.fr",
+                    "LANGFUSE_BASE_URL": "https://cloud.langfuse.com",
+                    "LLM_PROVIDER": "openai",
+                    "PORT": "8080"
+                  },
+                  "RuntimeEnvironmentSecrets": {
+                    "DATABASE_URL": "arn:aws:ssm:'"$AWS_REGION"':'"$ACCOUNT_ID"':parameter/raphaelmontico/DATABASE_URL",
+                    "OPENAI_API_KEY": "arn:aws:ssm:'"$AWS_REGION"':'"$ACCOUNT_ID"':parameter/raphaelmontico/OPENAI_API_KEY",
+                    "LANGFUSE_PUBLIC_KEY": "arn:aws:ssm:'"$AWS_REGION"':'"$ACCOUNT_ID"':parameter/raphaelmontico/LANGFUSE_PUBLIC_KEY",
+                    "LANGFUSE_SECRET_KEY": "arn:aws:ssm:'"$AWS_REGION"':'"$ACCOUNT_ID"':parameter/raphaelmontico/LANGFUSE_SECRET_KEY"
+                  }
                 }
               },
               "AuthenticationConfiguration": {
