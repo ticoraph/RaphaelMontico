@@ -1,0 +1,70 @@
+---
+title: "SurPri.fr"
+slug: "surpri"
+order: 6
+tags: ["Next.js", "FastAPI", "CrewAI", "Modal", "Supabase", "Prisma", "SSE", "Gemini", "OpenAI", "Telegram"]
+overview: "Application multi-agent d'aide au choix d'un véhicule électrique, fondée sur des calculs déterministes, des données sourcées et une veille automatisée des prix."
+---
+
+# SurPri.fr : décision multi-agent pour l'achat d'un véhicule électrique
+
+## Contexte
+
+[SurPri.fr](https://surpri.fr) aide un particulier à choisir une voiture électrique neuve en France. L'utilisateur décrit son budget après aide, son type de véhicule, son kilométrage, ses possibilités de recharge et ses contraintes techniques; l'application cherche les finitions compatibles, calcule leur coût réel et produit une note d'achat argumentée.
+
+Le service prolonge ensuite la recommandation par une veille quotidienne des prix de deux modèles au maximum, avec des alertes dans l'application et sur Telegram. Une démonstration sans compte permet de parcourir une analyse complète.
+
+## Problème
+
+Une recommandation automobile mêle contraintes éliminatoires, prix catalogue, aide officielle, énergie, assurance, entretien, valeur résiduelle, autonomie hivernale et usage autoroutier. Confier ces calculs à un LLM rendrait le résultat difficile à reproduire et pourrait laisser une explication persuasive modifier silencieusement le classement.
+
+Les sources sont elles-mêmes incomplètes ou contradictoires. Chaque valeur devait donc conserver son origine ou être signalée comme hypothèse. Enfin, une analyse multi-agent dure plus longtemps qu'une requête HTTP classique : elle devait survivre aux reconnexions du navigateur, à la limite de durée des endpoints Modal et à un éventuel arrêt du processus.
+
+## Solution
+
+J'ai séparé le calcul de l'interprétation. Le filtrage, la prime CEE, le TCO sur trois et cinq ans, l'autonomie ajustée, le score et le classement sont réalisés en Python et couverts par des tests. Le podium est figé avant l'intervention des agents; ceux-ci recherchent les éléments manquants, évaluent les candidats, contestent la sélection et rédigent le conseil sans pouvoir changer l'ordre calculé.
+
+Le Flow CrewAI suit un squelette explicite avec une supervision à actions bornées. J'ai évalué une politique de supervision pilotée par LLM, mais elle n'améliorait ni les podiums ni le sourçage et ajoutait un appel : la politique déterministe reste donc celle de production. Le catalogue versionné contient 78 finitions, enrichies depuis les constructeurs, l'ADEME et des bases ouvertes. Les modèles Pydantic constituent le contrat source et génèrent les types TypeScript utilisés par le frontend.
+
+## Architecture
+
+```text
+Navigateur
+    │
+Next.js 16 / Vercel
+    ├─ Supabase Auth par lien magique
+    ├─ Prisma pour les lectures serveur
+    └─ JWT + flux SSE rejouable
+                 │
+          FastAPI / Modal
+                 │
+       run_analysis / CrewAI
+       ├─ calculs Python déterministes
+       ├─ Gemini via OpenRouter ou OpenAI
+       ├─ journal d'événements et checkpoints
+       └─ Supabase PostgreSQL + RLS
+                 │
+       cron de veille des prix
+       ├─ pages officielles / Tavily
+       └─ alertes application + Telegram
+```
+
+Chaque événement SSE est enregistré avant d'être publié. Lors d'une reconnexion, `Last-Event-ID` permet de reprendre le flux sans perdre les étapes déjà reçues. L'état du Flow est sauvegardé après chaque étape terminée; une exécution interrompue repart du dernier checkpoint plutôt que de recommencer toute l'analyse.
+
+## Déploiement
+
+Le frontend Next.js est déployé sur Vercel à chaque push. L'API FastAPI est empaquetée et publiée sur Modal par GitHub Actions uniquement après le succès du lint, des types, des tests frontend et backend, du build et des tests Playwright. Le workflow termine par un contrôle de santé de l'API déployée.
+
+Supabase fournit PostgreSQL et l'authentification; les politiques RLS limitent chaque utilisateur à ses propres projets et analyses. Les migrations restent manuelles et sont appliquées avant le code qui en dépend. Un workflow hebdomadaire maintient le projet Supabase actif, tandis qu'une fonction Modal planifiée exécute la veille des prix et l'envoi idempotent des notifications Telegram.
+
+## Impact
+
+L'évaluation automatisée réussit 40 critères sur 40 pour quatre profils réels, avec des analyses terminées en 11 à 15 secondes. Elle vérifie notamment les contraintes dures, la reproductibilité du TCO, les exclusions motivées, le débat contradictoire, les citations connues et l'impossibilité pour le Conseiller de réordonner le podium.
+
+Le produit fournit ainsi une shortlist de zéro à trois véhicules, une estimation basse, centrale et haute du coût total, les motifs d'exclusion et les sources utilisées. La veille ne déclenche une alerte sur un prix extrait par LLM qu'après corroboration, et sa clé d'idempotence empêche la répétition d'une même notification.
+
+## Apprentissage
+
+SurPri m'a appris que l'usage d'agents doit être circonscrit à ce qu'ils font bien. Les LLM peuvent chercher, confronter et expliquer; les règles métier, les montants et le classement doivent rester dans du code déterministe lorsqu'ils engagent une décision financière.
+
+L'expérimentation de la politique LLM a également confirmé qu'une brique plus « intelligente » n'est utile que si elle améliore une métrique mesurée. Enfin, le journal SSE persistant et les checkpoints m'ont appris à concevoir les traitements longs comme des workflows reprenables, et non comme de simples requêtes réseau.

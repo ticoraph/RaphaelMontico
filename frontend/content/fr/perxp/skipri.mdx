@@ -1,34 +1,68 @@
 ---
 title: "SkiPri.fr"
 slug: "skipri"
-order: 4
-tags: ["Next.js", "React", "FastAPI", "PostgreSQL", "AWS Cognito", "AWS S3", "CloudFront", "Python"]
-overview: "Plateforme de comparaison des prix des forfaits de ski entre stations françaises, avec pipeline de scraping automatisé."
+order: 1
+tags: ["Next.js", "React", "FastAPI", "PostgreSQL", "Dagster", "AWS Cognito", "Web Scraping", "AWS S3", "CloudFront", "App Runner"]
+overview: "Comparateur de forfaits de ski fondé sur un pipeline multi-sources qui normalise stations, domaines, prix et conditions avant publication."
 ---
 
-[SkiPri.com](https://SkiPri.fr) est une plateforme de comparaison des prix des forfaits de ski entre les stations françaises, avec une interface de filtrage pour trouver les meilleures offres et un espace d'administration pour gérer les données des stations et superviser le pipeline de scraping.
+# SkiPri.fr : comparateur de forfaits de ski
 
-Ce projet couvre l'ensemble de la chaîne : collecte automatisée de données depuis plusieurs sources, API backend sécurisée, et interface web statique déployée sur AWS.
+## Contexte
 
-# Fonctionnalités
+[SkiPri.fr](https://skipri.fr) centralise les tarifs des stations françaises, des domaines skiables et des revendeurs afin de comparer des offres réellement équivalentes. J'ai développé le produit, l'API, le back-office et surtout le pipeline qui transforme des pages web, PDF, tables historiques et saisies manuelles en données publiables.
 
-- Interface de comparaison des prix des forfaits de ski, filtrable par station
-- Espace d'administration (AWS Cognito) pour gérer les données des stations et suivre le pipeline de scraping
-- Pipeline de collecte de données automatisé, agrégeant plusieurs sources 
-- API REST sécurisée avec validation des tokens côté serveur
+Le projet couvre aujourd'hui le parcours public, un espace utilisateur, la comparaison de groupes, les favoris, l'administration des référentiels et le suivi de la qualité des données.
 
-# Architecture & technologies
+## Problème
 
-- **Frontend** : Next.js 16 (React 19), Tailwind CSS 4, export statique
-- **Backend** : FastAPI (Python), SQLAlchemy 2, PostgreSQL
-- **Authentification** : AWS Cognito
-- **Base de données** : PostgreSQL
-- **Collecte de données** : scrapers Python (BeautifulSoup, pdfplumber, pandas, httpx)
-- **Hébergement** : frontend sur S3 + CloudFront, backend sur AWS
+Comparer un forfait ne consiste pas à aligner deux nombres. Les sources emploient des noms différents pour la même station, mélangent station et domaine, publient plusieurs saisons et associent au prix des conditions de durée, public, activité, date, carte, adhésion ou livraison.
 
-# Points clés
+Les pages changent de structure, certains tarifs n'existent qu'en PDF et les sources se contredisent. Il fallait conserver chaque observation et sa provenance, résoudre les identités sans fusion incorrecte, comparer uniquement des produits équivalents et permettre une correction humaine sans perdre celle-ci au prochain recalcul.
 
-- Conception d'un pipeline de scraping multi-sources (extraction PDF, parsing, staging et synchronisation vers des tables canoniques avec gestion des alias de noms de stations)
-- Développement du backend FastAPI avec authentification Cognito et séparation claire entre lecture publique et administration
-- Modélisation de la base de données pour les stations, prix et sources de données
-- Mise en place de l'infrastructure AWS (S3, CloudFront) pour un export statique performant
+## Solution
+
+J'ai séparé le traitement en trois couches Dagster. La couche brute parse les fichiers et copie les tables de staging source par source. La couche d'observations rattache chaque ligne à une station ou un domaine canonique, normalise unités, catégories, durées, périodes et conditions. La dernière couche choisit les caractéristiques et meilleurs prix affichables selon fiabilité, fraîcheur et règles propres à chaque attribut.
+
+Le référentiel s'appuie sur `canonical_resorts`, `canonical_domains`, leurs appartenances et les alias de sources. Les corrections du back-office sont stockées comme overrides, appliquées immédiatement et conservées lors des reconstructions. FastAPI expose ensuite stations, domaines, tarifs, webcams, avis et enneigement. Next.js fournit les pages publiques, l'administration et l'espace Cognito; la comparaison calcule en centimes les offres d'un groupe en comptant une seule fois les frais communs.
+
+## Architecture
+
+```text
+Sites, API, PDF et saisies manuelles
+                 │
+          scrapers Python
+                 │
+      fichiers / tables brutes
+                 │
+              Dagster
+   brut → observations → valeurs retenues
+                 │
+             PostgreSQL
+                 │
+              FastAPI
+          ┌──────┴──────┐
+          ▼             ▼
+Next.js public     espace utilisateur
++ back-office      + Cognito
+```
+
+Le frontend est exporté statiquement; toutes les opérations dynamiques passent par l'API. Les tests Dagster vérifient pertes de lignes, identités non rattachées, doublons, erreurs de parsing et prix incohérents.
+
+## Déploiement
+
+Le frontend Next.js est construit dans GitHub Actions, synchronisé vers S3 puis servi par CloudFront. L'API FastAPI est conteneurisée, poussée dans ECR et mise à jour sur App Runner. CloudFront relaie `/api/*` vers le backend; PostgreSQL est hébergé sur AWS RDS et ses secrets proviennent de SSM. L'accès administrateur repose sur les jetons Cognito et le groupe `skipri-admin`.
+
+Le pipeline Dagster reste volontairement exécuté séparément : les workflows applicatifs ne lancent ni les scrapers, ni les migrations, ni la consolidation. Avant de déployer une API qui dépend de nouvelles tables, je prépare la base, exécute les assets et valide les contrôles. Cette séparation évite qu'un déploiement de code modifie silencieusement les données de production.
+
+## Impact
+
+Le catalogue documenté couvre 292 stations et 34 domaines, avec deux saisons publiées et plus de dix sources actives. Il ne présente pas seulement le prix minimum : chaque résultat conserve vendeur, validité, public, durée, périmètre et conditions, tandis que les frais incertains restent signalés au lieu d'être inventés.
+
+Le back-office permet de résoudre les alias, fusionner les doublons, corriger les caractéristiques ou les tarifs et consulter l'historique. Les lots applicatifs et les déploiements automatiques sont en place; la validation des connexions Cognito et des emails réels reste explicitement identifiée comme une étape avant ouverture complète de l'espace utilisateur.
+
+## Apprentissage
+
+J'ai appris que la difficulté centrale d'un comparateur est le modèle de données, pas l'écran de résultat. Sans identité canonique, provenance et définition stricte d'un produit comparable, un prix « moins cher » peut être faux.
+
+Dagster m'a permis de rendre les transformations observables et testables, mais le projet m'a aussi appris à accepter les interventions humaines. Les overrides et décisions documentées sont nécessaires lorsque les sources restent ambiguës; l'automatisation doit les préserver plutôt que les écraser.

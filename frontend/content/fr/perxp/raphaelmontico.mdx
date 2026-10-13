@@ -1,36 +1,64 @@
 ---
 title: "RaphaelMontico.fr"
 slug: "raphaelmontico"
-order: 1
+order: 2
 tags: ["Next.js", "FastAPI", "PostgreSQL", "pgvector", "RAG", "OpenAI", "Langfuse", "AWS S3", "CloudFront", "App Runner"]
-overview: "Portfolio personnel AI-native indexé pour un chatbot RAG capable de répondre à des questions sur mon parcours et mes projets."
+overview: "Portfolio bilingue AI-native dont le contenu alimente une recherche sémantique et un assistant RAG observable en production."
 ---
 
-[RaphaelMontico.fr](https://raphaelmontico.fr) est mon portfolio personnel, pensé comme un projet "AI-native" : au-delà de la présentation classique de mon parcours et de mes projets, tout le contenu du site (pages, expériences, projets) est indexé pour être interrogé via un chatbot RAG (Retrieval Augmented Generation).
+# RaphaelMontico.fr : portfolio AI-native
 
-Ce site me sert à la fois de vitrine et de terrain d'expérimentation pour mettre en pratique une architecture IA de bout en bout : ingestion de contenu, recherche sémantique, génération augmentée par la recherche, et déploiement cloud d'un système découplé frontend / backend IA.
+## Contexte
 
-# Fonctionnalités
+[RaphaelMontico.fr](https://raphaelmontico.fr) présente mon parcours, mes expériences et mes projets en français et en anglais. J'ai choisi d'en faire plus qu'une vitrine : le contenu réel du site alimente une API de recherche sémantique et un assistant capable de répondre aux questions d'un visiteur sur mon profil.
 
-- Portfolio bilingue (FR/EN) présentant mon parcours, mes expériences professionnelles et mes projets personnels
-- Backend d'assistant IA (RAG) capable de répondre en langage naturel à des questions sur mon profil, mes projets et mes choix techniques, en s'appuyant sur le contenu réel du site (réponses en streaming) — intégration de l'interface de chat en cours de finalisation côté frontend
-- API de recherche sémantique sur l'ensemble du contenu (pages, expériences, projets), au-delà d'une simple recherche par mot-clé
-- Génération des réponses via un modèle de langage OpenAI
-- Traçabilité (observabilité) complète du pipeline RAG avec Langfuse : traces de bout en bout depuis la requête utilisateur jusqu'à la réponse streamée, suivi des coûts et des latences
+Le projet me sert de démonstrateur continu pour une architecture RAG en production, depuis l'édition des pages MDX jusqu'au streaming d'une réponse et à son observation dans Langfuse.
 
-# Architecture & technologies
+## Problème
 
-- **Frontend** : Next.js (App Router), TypeScript, Tailwind CSS 4, next-intl (i18n), contenu en MDX (`gray-matter` + `next-mdx-remote`), export statique
-- **Backend** : FastAPI, SQLAlchemy async + asyncpg, Alembic
-- **Base de données** : PostgreSQL + pgvector pour le stockage des embeddings
-- **IA** : embeddings OpenAI, LLM OpenAI, réponses en streaming (SSE)
-- **Observabilité** : Langfuse (SDK v4, basé sur OpenTelemetry) pour la traçabilité des appels LLM et du pipeline RAG
-- **Infrastructure** : frontend statique sur S3 + CloudFront, backend conteneurisé sur AWS (API Gateway/App Runner), pipeline d'ingestion et CI/CD via GitHub Actions
+Le site devait rester rapide, indexable et disponible indépendamment du backend IA. En parallèle, le chatbot avait besoin d'une base vectorielle, d'un modèle d'embedding et d'un LLM, composants incompatibles avec un simple export statique.
 
-# Points clés
+Il fallait aussi maintenir deux langues sans dupliquer manuellement chaque modification, éviter les réingestions inutiles et comprendre le comportement du RAG. Avec une réponse SSE, la trace OpenTelemetry doit rester attachée pendant toute la durée du flux, même après le retour initial de FastAPI.
 
-- Conception d'une architecture découplée : le frontend reste 100 % statique, toute la logique IA (retrieval, appel LLM, embeddings) vivant dans un backend déployé séparément
-- Mise en place d'un pipeline d'ingestion dédié transformant le contenu MDX du site en chunks puis en embeddings stockés dans pgvector
-- Implémentation d'une interface d'abstraction des fournisseurs de LLM permettant de changer de modèle sans impacter le reste du système
-- Mise en place d'un pipeline CI/CD complet (lint, tests, build, déploiement frontend/backend, relance de l'ingestion sur changement de contenu)
-- Intégration de Langfuse pour tracer l'ensemble du pipeline RAG, y compris la propagation du contexte de trace OpenTelemetry à travers les réponses en streaming (un point délicat traité spécifiquement pour ne pas casser l'arborescence des traces)
+## Solution
+
+J'ai conservé le français comme source éditoriale dans des fichiers MDX. Un registre de checksums détecte les pages modifiées; un script traduit uniquement les contenus en attente avec OpenAI et contrôle la parité des collections. Next.js génère ensuite un frontend bilingue entièrement statique.
+
+Un pipeline séparé nettoie les pages, les découpe en chunks, calcule des embeddings OpenAI `text-embedding-3-small` de dimension 768 puis les synchronise dans PostgreSQL/pgvector. FastAPI expose `/api/search` et `/api/chat`. Pour le chat, la question est vectorisée, les cinq passages les plus proches dans la langue demandée sont injectés dans le prompt, puis GPT-6 Luna renvoie les tokens en SSE avec les sources et les métriques de latence et d'usage.
+
+## Architecture
+
+```text
+MDX français ── checksums ── traduction OpenAI ── MDX anglais
+      │                                         │
+      ├──────────── Next.js statique ───────────┘
+      │                    │
+      │               S3 + CloudFront
+      │
+      └─ ingestion → chunks → embeddings OpenAI
+                                  │
+                             PostgreSQL/pgvector
+                                  ▲
+Visiteur → FastAPI → retrieval → GPT-6 Luna → SSE
+                    └──────── Langfuse / OpenTelemetry
+```
+
+Le frontend reste utilisable si l'API IA est indisponible. L'interface dédiée aux embeddings est séparée de celle du LLM afin que les deux responsabilités puissent évoluer sans modifier le pipeline d'ingestion ou le contrat du chat.
+
+## Déploiement
+
+GitHub Actions vérifie le frontend et le backend à chaque proposition de changement. Sur la branche principale, le frontend exporté est synchronisé vers S3 puis servi par CloudFront; le backend Docker est déployé séparément sur AWS avec App Runner/API Gateway et accède à PostgreSQL.
+
+Un workflow d'ingestion se déclenche lorsque les contenus MDX ou le code d'indexation changent. Les migrations Alembic versionnent le schéma. Les clés OpenAI et Langfuse restent côté backend; la documentation OpenAPI peut être désactivée en production, et des limites de corps et de fréquence protègent les routes publiques.
+
+## Impact
+
+Un seul contenu alimente désormais trois usages : les pages du portfolio, la recherche sémantique et les réponses du chatbot. Le site peut être parcouru classiquement ou interrogé en langage naturel, avec restitution des sources utilisées plutôt qu'une réponse impossible à vérifier.
+
+Langfuse trace la requête, le retrieval et la génération, tandis que l'événement final expose modèle, tokens et temps de retrieval/génération. Cette observabilité permet de relier qualité, latence et coût sans transformer le frontend statique en application dépendante du backend.
+
+## Apprentissage
+
+J'ai appris à concevoir le contenu comme une donnée versionnée : traduction, indexation et déploiement doivent réagir à ses changements de manière déterministe. Le registre de checksums évite les traitements globaux et rend les écarts entre langues visibles.
+
+La propagation du contexte OpenTelemetry à travers un générateur SSE m'a aussi confronté à un problème concret d'observabilité asynchrone. Une trace utile doit suivre la réponse jusqu'au dernier token, pas s'arrêter quand FastAPI retourne l'objet `StreamingResponse`.

@@ -58,6 +58,14 @@ export default async function HomePage({
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{page.title}</h1>
           {page.subtitle && <p className="mt-1 text-lg opacity-80">{page.subtitle}</p>}
+          <p className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm sm:justify-start">
+            <span className="rounded-full bg-emerald-600/15 px-2.5 py-0.5 font-medium text-emerald-700 dark:text-emerald-400">
+              {t("openToWork")}
+            </span>
+            <span className="rounded-full bg-current/10 px-2.5 py-0.5 font-medium opacity-80">
+              {t("location")}
+            </span>
+          </p>
         </div>
       </div>
       <MDXRemote source={before} components={mdxComponents} />

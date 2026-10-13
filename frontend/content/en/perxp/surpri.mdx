@@ -1,0 +1,70 @@
+---
+title: "SurPri.fr"
+slug: "surpri"
+order: 6
+tags: ["Next.js", "FastAPI", "CrewAI", "Modal", "Supabase", "Prisma", "SSE", "Gemini", "OpenAI", "Telegram"]
+overview: "Multi-agent application to help users choose an electric vehicle, based on deterministic calculations, sourced data, and automated price monitoring."
+---
+
+# SurPri.fr: multi-agent decision-making for buying an electric vehicle
+
+## Context
+
+[SurPri.fr](https://surpri.fr) helps individuals choose a new electric car in France. Users describe their budget after incentives, vehicle type, mileage, charging options, and technical constraints; the application searches for compatible trims, calculates their actual cost, and produces a reasoned buying recommendation.
+
+The service then extends the recommendation with daily price monitoring for up to two models, with alerts in the application and on Telegram. A demo that requires no account lets users explore a complete analysis.
+
+## Problem
+
+A car recommendation combines knockout constraints, list price, official incentives, energy, insurance, maintenance, residual value, winter range, and highway use. Delegating these calculations to an LLM would make the results difficult to reproduce and could allow a persuasive explanation to silently alter the ranking.
+
+The sources themselves are also incomplete or contradictory. Each value therefore had to retain its origin or be flagged as an assumption. Finally, a multi-agent analysis takes longer than a typical HTTP request: it had to survive browser reconnections, Modal endpoint time limits, and a potential process shutdown.
+
+## Solution
+
+I separated calculation from interpretation. Filtering, the CEE subsidy, three- and five-year TCO, adjusted range, scoring, and ranking are handled in Python and covered by tests. The podium is fixed before the agents get involved; they search for missing information, assess candidates, challenge the selection, and write the recommendation without being able to change the calculated order.
+
+The CrewAI Flow follows an explicit skeleton with bounded-action supervision. I evaluated an LLM-driven supervision policy, but it improved neither the podiums nor the sourcing and added a call, so the deterministic policy remains in production. The versioned catalog contains 78 trims, enriched with data from manufacturers, ADEME, and open databases. Pydantic models form the source contract and generate the TypeScript types used by the frontend.
+
+## Architecture
+
+```text
+Browser
+    │
+Next.js 16 / Vercel
+    ├─ Supabase Auth via magic link
+    ├─ Prisma for server-side reads
+    └─ JWT + replayable SSE stream
+                 │
+          FastAPI / Modal
+                 │
+       run_analysis / CrewAI
+       ├─ deterministic Python calculations
+       ├─ Gemini via OpenRouter or OpenAI
+       ├─ event log and checkpoints
+       └─ Supabase PostgreSQL + RLS
+                 │
+       price monitoring cron
+       ├─ official pages / Tavily
+       └─ application + Telegram alerts
+```
+
+Each SSE event is recorded before being published. When reconnecting, `Last-Event-ID` allows the stream to resume without losing steps already received. The Flow state is saved after each completed step; an interrupted run resumes from the last checkpoint rather than restarting the entire analysis.
+
+## Deployment
+
+The Next.js frontend is deployed to Vercel on every push. The FastAPI API is packaged and deployed to Modal by GitHub Actions only after linting, type checks, frontend and backend tests, the build, and Playwright tests all pass. The workflow ends with a health check of the deployed API.
+
+Supabase provides PostgreSQL and authentication; RLS policies restrict each user to their own projects and analyses. Migrations remain manual and are applied before the code that depends on them. A weekly workflow keeps the Supabase project active, while a scheduled Modal function runs price monitoring and sends Telegram notifications idempotently.
+
+## Impact
+
+Automated evaluation passes 40 out of 40 criteria across four real-world profiles, with analyses completed in 11 to 15 seconds. It checks hard constraints, TCO reproducibility, justified exclusions, adversarial debate, known citations, and the Adviser’s inability to reorder the podium.
+
+The product thus provides a shortlist of zero to three vehicles, a low, central, and high estimate of total cost, reasons for exclusion, and the sources used. Monitoring only triggers an alert for an LLM-extracted price after corroboration, and its idempotency key prevents the same notification from being repeated.
+
+## Lessons learned
+
+SurPri taught me that agent use must be limited to what agents do well. LLMs can search, compare, and explain; business rules, amounts, and rankings should remain in deterministic code when they affect a financial decision.
+
+The experiment with the LLM policy also confirmed that a more “intelligent” component is only useful if it improves a measured metric. Finally, the persistent SSE log and checkpoints taught me to design long-running processes as resumable workflows rather than simple network requests.

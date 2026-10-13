@@ -1,34 +1,68 @@
 ---
 title: "SkiPri.fr"
 slug: "skipri"
-order: 4
-tags: ["Next.js", "React", "FastAPI", "PostgreSQL", "AWS Cognito", "AWS S3", "CloudFront", "Python"]
-overview: "Ski pass price comparison platform across French resorts, featuring an automated scraping pipeline."
+order: 1
+tags: ["Next.js", "React", "FastAPI", "PostgreSQL", "Dagster", "AWS Cognito", "Web Scraping", "AWS S3", "CloudFront", "App Runner"]
+overview: "Ski pass comparison platform powered by a multi-source pipeline that normalizes resorts, ski areas, prices, and conditions before publication."
 ---
 
-[SkiPri.com](https://SkiPri.fr) is a ski pass price comparison platform across French resorts, featuring a filtering interface to find the best deals and an administration area to manage resort data and monitor the scraping pipeline.
+# SkiPri.fr: ski pass comparison tool
 
-This project covers the entire chain: automated data collection from multiple sources, secure backend API, and a static web interface deployed on AWS.
+## Context
 
-# Features
+[SkiPri.fr](https://skipri.fr) brings together prices from French resorts, ski areas and retailers to compare genuinely equivalent offers. I developed the product, API, back office and, above all, the pipeline that transforms web pages, PDFs, historical tables and manual entries into publishable data.
 
-- Ski pass price comparison interface, filterable by resort
-- Administration area (AWS Cognito) to manage resort data and track the scraping pipeline
-- Automated data collection pipeline aggregating multiple sources
-- Secure REST API with server-side token validation
+The project now covers the public user journey, a user area, group comparisons, favorites, reference data administration and data quality monitoring.
 
-# Architecture & Technologies
+## Problem
 
-- **Frontend**: Next.js 16 (React 19), Tailwind CSS 4, static export
-- **Backend**: FastAPI (Python), SQLAlchemy 2, PostgreSQL
-- **Authentication**: AWS Cognito
-- **Database**: PostgreSQL
-- **Data Collection**: Python scrapers (BeautifulSoup, pdfplumber, pandas, httpx)
-- **Hosting**: Frontend on S3 + CloudFront, backend on AWS
+Comparing a ski pass is not a matter of lining up two numbers. Sources use different names for the same resort, mix resorts and ski areas, publish multiple seasons, and associate prices with conditions related to duration, audience, activity, date, card, membership or delivery.
 
-# Key Highlights
+Pages change structure, some prices are only available in PDFs, and sources contradict one another. Every observation and its provenance had to be preserved, identities resolved without incorrect merges, only equivalent products compared, and human corrections made possible without losing them on the next recalculation.
 
-- Design of a multi-source scraping pipeline (PDF extraction, parsing, staging, and synchronization to canonical tables with resort name alias management)
-- Development of the FastAPI backend with Cognito authentication and clear separation between public read and administration
-- Database modeling for resorts, prices, and data sources
-- Setup of AWS infrastructure (S3, CloudFront) for high-performance static export
+## Solution
+
+I separated processing into three Dagster layers. The raw layer parses files and copies staging tables source by source. The observations layer links each row to a canonical resort or ski area, and normalizes units, categories, durations, periods and conditions. The final layer selects the characteristics and best prices to display based on reliability, freshness and rules specific to each attribute.
+
+The reference data is based on `canonical_resorts`, `canonical_domains`, their memberships and source aliases. Back-office corrections are stored as overrides, applied immediately and preserved during rebuilds. FastAPI then exposes resorts, ski areas, prices, webcams, reviews and snow conditions. Next.js provides the public pages, administration and Cognito user area; the comparison calculates group offers in cents, counting shared fees only once.
+
+## Architecture
+
+```text
+Sites, API, PDF and manual entries
+                 │
+          scrapers Python
+                 │
+      fichiers / tables brutes
+                 │
+              Dagster
+   brut → observations → valeurs retenues
+                 │
+             PostgreSQL
+                 │
+              FastAPI
+          ┌──────┴──────┐
+          ▼             ▼
+Next.js public     espace utilisateur
++ back-office      + Cognito
+```
+
+The frontend is statically exported; all dynamic operations go through the API. Dagster tests check for lost rows, unlinked identities, duplicates, parsing errors and inconsistent prices.
+
+## Deployment
+
+The Next.js frontend is built in GitHub Actions, synced to S3 and served by CloudFront. The FastAPI API is containerized, pushed to ECR and updated on App Runner. CloudFront forwards `/api/*` to the backend; PostgreSQL is hosted on AWS RDS and its secrets come from SSM. Administrator access relies on Cognito tokens and the `skipri-admin` group.
+
+The Dagster pipeline deliberately runs separately: application workflows do not launch scrapers, migrations or consolidation. Before deploying an API that depends on new tables, I prepare the database, run the assets and validate the checks. This separation prevents a code deployment from silently changing production data.
+
+## Impact
+
+The documented catalog covers 292 resorts and 34 ski areas, with two published seasons and more than ten active sources. It does not show only the minimum price: each result retains the seller, validity, audience, duration, scope and conditions, while uncertain fees remain flagged rather than invented.
+
+The back office makes it possible to resolve aliases, merge duplicates, correct characteristics or prices, and consult the history. Application releases and automatic deployments are in place; validation of Cognito connections and real emails is explicitly identified as a step to complete before fully opening the user area.
+
+## Lessons learned
+
+I learned that the central challenge of a comparison tool is the data model, not the results screen. Without canonical identity, provenance and a strict definition of a comparable product, a “cheaper” price can be wrong.
+
+Dagster helped me make transformations observable and testable, but the project also taught me to accept human intervention. Overrides and documented decisions are necessary when sources remain ambiguous; automation must preserve them rather than overwrite them.

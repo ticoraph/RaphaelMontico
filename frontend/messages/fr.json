@@ -2,7 +2,7 @@
   "nav": {
     "home": "Accueil",
     "proxp": "Parcours",
-    "perxp": "Projets personnels",
+    "perxp": "Projets professionnels",
     "schoolprojects": "Projets académiques",
     "diplomas": "Formation",
     "chat": "Assistant IA"
@@ -12,8 +12,8 @@
     "backToList": "Retour au Parcours"
   },
   "perxp": {
-    "title": "Projets personnels",
-    "backToList": "Retour aux Projets personnels"
+    "title": "Projets professionnels",
+    "backToList": "Retour aux Projets professionnels"
   },
   "schoolprojects": {
     "title": "Projets académiques",
@@ -53,6 +53,8 @@
     "switch": "Changer de langue"
   },
   "home": {
-    "photoAlt": "Portrait de Raphaël Montico"
+    "photoAlt": "Portrait de Raphaël Montico",
+    "openToWork": "#OpenToWork",
+    "location": "Genève et Périphérie"
   }
 }

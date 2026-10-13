@@ -1,0 +1,65 @@
+---
+title: "TneXa.fr"
+slug: "tnexa"
+order: 5
+tags: ["Astro", "MDX", "TypeScript", "Cloudflare Workers", "Wrangler", "GitHub Actions", "Accessibilité", "Sécurité"]
+overview: "Site vitrine statique de TneXa, conçu pour présenter une offre d'intelligence artificielle appliquée, ses produits, ses réalisations et ses travaux de R&D."
+---
+
+# TneXa.fr : vitrine d'une activité IA
+
+## Contexte
+
+[TneXa.fr](https://tnexa.fr) est le site de mon entreprise individuelle, spécialisée dans les systèmes d'intelligence artificielle connectés aux données et aux outils métier : IA générative, agents, automatisation, data engineering et machine learning.
+
+Le site doit rendre cette offre compréhensible, présenter TneGa — une plateforme d'agents installée dans l'environnement du client — et relier le positionnement de l'entreprise à des réalisations déjà en ligne et à plusieurs projets de recherche et développement.
+
+## Problème
+
+Le premier socle React/Vite était trop générique pour un site principalement éditorial. Il aurait fallu construire manuellement le routage, la gestion des métadonnées et l'organisation du contenu, alors que le produit attendu ne nécessite ni API, ni base de données, ni formulaire côté serveur.
+
+L'autre difficulté était éditoriale : réunir des expertises, une gamme de produits, des réalisations et des projets exploratoires sans donner l'impression d'un catalogue disparate. Le site devait rester rapide, accessible et simple à faire évoluer, tout en étant volontairement fermé aux moteurs de recherche et aux robots d'IA pendant cette phase.
+
+## Solution
+
+J'ai remplacé le socle initial par Astro 7 en mode statique. Les pages très structurées sont écrites en `.astro`, les contenus éditoriaux en MDX et les informations communes — navigation, descriptions, produits et liens externes — sont centralisées dans un registre TypeScript.
+
+Des layouts et composants réutilisables portent la mise en page, les cartes, les étapes de méthode et les appels à l'action. Le parcours commence par les problèmes et résultats clients, puis présente trois expertises, le produit TneGa, cinq réalisations et quatre projets de R&D. L'absence de formulaire et de code serveur réduit la maintenance et la surface d'attaque.
+
+## Architecture
+
+```text
+Configuration TypeScript ── navigation et métadonnées
+          │
+Pages Astro + contenus MDX
+          │
+Layouts et composants réutilisables
+          │
+       Astro build
+          │
+      HTML / CSS statiques
+          │
+Cloudflare Workers Static Assets
+          │
+       tnexa.fr
+```
+
+Les fichiers `robots.txt`, `_headers` et les métadonnées appliquent la fermeture aux robots. Les en-têtes ajoutent également une Content Security Policy, l'interdiction d'affichage en iframe, une politique de permissions et une stratégie de cache longue pour les ressources versionnées.
+
+## Déploiement
+
+GitHub Actions exécute `astro check` puis le build sur chaque proposition de changement. Un push validé sur `main` déclenche ensuite `wrangler deploy`; l'environnement GitHub `production` peut imposer une validation humaine avant la publication.
+
+Cloudflare gère le DNS et sert les fichiers statiques depuis Workers Static Assets. OVHcloud reste le registrar et l'hébergeur de la boîte `contact@tnexa.fr` : la migration DNS conserve donc les enregistrements MX, SPF et DKIM, qui ne passent jamais par le proxy Cloudflare. Aucun secret applicatif ni service persistant n'est nécessaire au fonctionnement du site.
+
+## Impact
+
+Le site rassemble désormais dans une identité cohérente trois expertises, TneGa, cinq réalisations et quatre axes de R&D. Les contenus peuvent être modifiés en MDX sans toucher aux composants, tandis que les éléments répétés restent pilotés par une configuration unique.
+
+L'architecture statique apporte des pages rapides, peu coûteuses à héberger et indépendantes d'un backend. La fermeture à l'indexation est appliquée à plusieurs niveaux — `robots.txt`, en-têtes HTTP et métadonnées — plutôt que de reposer sur une seule convention suivie de manière inégale par les robots.
+
+## Apprentissage
+
+Ce projet m'a appris à choisir une architecture proportionnée au besoin. Un site de contenu n'a pas besoin d'un runtime applicatif permanent : Astro et MDX fournissent le cadre éditorial, le typage et la réutilisation nécessaires sans introduire de serveur inutile.
+
+La mise en ligne m'a aussi rappelé que déployer un site ne se limite pas à publier des fichiers. Le changement de DNS doit préserver la messagerie, les en-têtes de sécurité font partie du produit et une politique de non-indexation doit être explicite sur chaque couche de diffusion.

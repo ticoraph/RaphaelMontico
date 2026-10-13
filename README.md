@@ -4,9 +4,9 @@ Portfolio AI-native de Raphaël Montico : un site Next.js statique (FR/EN) coupl
 
 ## Présentation
 
-[raphaelmontico.fr](https://raphaelmontico.fr) présente le parcours, les expériences professionnelles et les projets personnels de Raphaël Montico. Au-delà de la vitrine classique, l'ensemble du contenu du site (pages, expériences, projets) est chunké, embeddé et stocké dans pgvector afin d'être interrogeable en langage naturel par un assistant IA — le site sert ainsi à la fois de portfolio et de terrain de démonstration d'une architecture RAG en production.
+[raphaelmontico.fr](https://raphaelmontico.fr) présente le parcours, les expériences professionnelles et les projets professionnels de Raphaël Montico. Au-delà de la vitrine classique, l'ensemble du contenu du site (pages, expériences, projets) est chunké, embeddé et stocké dans pgvector afin d'être interrogeable en langage naturel par un assistant IA — le site sert ainsi à la fois de portfolio et de terrain de démonstration d'une architecture RAG en production.
 
-- **Portfolio** : parcours pro, projets personnels et scolaires, diplômes — en FR/EN
+- **Portfolio** : parcours pro, projets professionnels et scolaires, diplômes — en FR/EN
 - **Recherche sémantique** : `POST /api/search` interroge les contenus indexés par similarité vectorielle plutôt que par mot-clé
 - **Assistant IA (RAG)** : `POST /api/chat` répond en streaming (SSE) à des questions sur le profil et les projets, via le fournisseur choisi dans `.env` ; l'interface de chat côté frontend est en cours de finalisation
 - **Ingestion automatisée** : le contenu MDX est ré-indexé automatiquement (embeddings OpenAI → pgvector) à chaque changement, via GitHub Actions

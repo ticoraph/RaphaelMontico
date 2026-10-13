@@ -2,39 +2,66 @@
 title: "PulpFiction.fr"
 slug: "pulpfiction"
 order: 3
-tags: ["React", "TypeScript", "FastAPI", "PostgreSQL", "AWS Cognito", "AWS S3", "CloudFront", "App Runner", "Tailwind CSS", "Llama 3.1", "RAG", "vLLM"]
-overview: "Application web full-stack présentant une collection Pulp Fiction, incluant un chatbot IA pour discuter avec les personnages du film."
+tags: ["React", "TypeScript", "FastAPI", "PostgreSQL", "Cloudflare Access", "AWS", "Llama 3.1", "QLoRA", "RAG", "vLLM", "Modal"]
+overview: "Application cloud-native consacrée à une collection Pulp Fiction, complétée par un chatbot RAG incarnant six personnages du film."
 ---
 
-[Pulpfiction.fr](https://pulpfiction.fr) est une application web full-stack, conçue pour présenter et gérer la plus grande collection au monde d'objets de collection Pulp Fiction, avec mise en avant de liens d'affiliation. Elle intègre également un chatbot IA permettant de discuter avec les personnages emblématiques du film (Jules, Vincent, Mia, Marsellus, Butch, Winston Wolf).
+# PulpFiction.fr : collection et chatbot IA
 
-Ce projet m'a permis de mettre en pratique, de bout en bout, la conception, le développement et le déploiement d'une application cloud-native en production : de l'architecture de la base de données à la mise en place du pipeline de déploiement continu, en passant par la gestion des accès et de l'authentification, ainsi que l'intégration d'un modèle d'IA générative fine-tuné.
+## Contexte
 
-# Fonctionnalités
+[PulpFiction.fr](https://pulpfiction.fr) présente et administre une collection d'objets consacrés au film, avec une galerie publique, des fiches détaillées et des liens d'affiliation. J'ai développé l'application complète, puis un second service IA permettant de converser avec Jules, Vincent, Mia, Marsellus, Butch ou Winston Wolf.
 
-- **Chatbot IA** : discutez avec les personnages du film (Llama 3.1 8B fine-tuné, RAG pour la factualité)
-- Galerie publique responsive de la collection
-- Authentification et gestion de compte (AWS Cognito)
-- Espace d'administration avec droits complets : création, modification, suppression et réordonnancement des objets, gestion de leur visibilité
-- API REST sécurisée, avec vérification côté serveur des tokens d'accès
+Le projet associe ainsi deux besoins distincts : exploiter un catalogue éditorial en production et construire un personnage conversationnel capable de respecter le style du film sans inventer ses faits.
 
-# Architecture & technologies
+## Problème
 
-- **IA & Modèle** : Llama 3.1 8B Instruct (fine-tuning QLoRA), RAG (pgvector)
-- **Inférence IA** : vLLM sur infrastructure serverless Modal (scale-to-zero)
-- **Frontend** : React 18, TypeScript, Tailwind CSS, React Router, Vite
-- **Backend** : FastAPI, SQLAlchemy
-- **Base de données** : PostgreSQL (AWS RDS) avec extension pgvector
-- **Authentification** : AWS Cognito via AWS Amplify
-- **Hébergement** : frontend sur S3 + CloudFront, backend conteneurisé (Docker) sur AWS App Runner via ECR
-- **CI/CD** : déploiement automatisé via GitHub Actions
+La galerie devait rester rapide et publique, tout en réservant les opérations de création, modification, suppression, visibilité et réordonnancement à un seul administrateur. Comme App Runner ne dispose pas ici d'un ingress privé, la protection ne pouvait pas reposer sur une route simplement masquée dans le frontend.
 
-# Points clés
+Pour le chatbot, un modèle généraliste connaissait le film mais ne reproduisait pas de façon stable la voix de chaque personnage. Le fine-tuning pouvait renforcer le style, mais pas garantir la factualité; il fallait donc séparer personnalité apprise et connaissances retrouvées dans un corpus documentaire.
 
-- Pipeline complet d'IA : création de dataset sur-mesure (parsing du scénario original, traduction), fine-tuning sur le cloud (AWS SageMaker / GCP Vertex AI) et évaluation
-- Intégration d'un chatbot RAG performant avec FastAPI et une base vectorielle (pgvector)
-- Déploiement serverless et scale-to-zero de l'inférence LLM sur Modal, optimisant les coûts
-- Conception et implémentation complètes du backend FastAPI, incluant la vérification des tokens JWT Cognito (JWKS) et la séparation claire entre lecture publique et écriture authentifiée
-- Modélisation de la base de données (objets de collection, rôles utilisateurs) et gestion de l'ordre d'affichage
-- Mise en place d'une infrastructure AWS complète (S3, CloudFront, RDS, Cognito, App Runner, ECR) avec un pipeline de build et de déploiement automatisé
-- Attention portée à l'accessibilité, à la performance (code splitting, images optimisées) et à la compatibilité mobile
+## Solution
+
+J'ai construit la galerie en React et TypeScript, avec une API FastAPI et une base PostgreSQL. Les lectures sont publiques. Les écritures exigent un secret `X-Admin-Secret` que le navigateur ne connaît jamais : Cloudflare Access protège la route d'administration par OTP et un Worker injecte le secret avant de relayer la requête vers l'API.
+
+Pour le chatbot, j'ai extrait 1 181 dialogues du scénario, traduit le corpus en français, construit 165 paires issues du script et généré 1 200 paires synthétiques. Le split final contient 1 229 exemples d'entraînement et 136 de validation. J'ai spécialisé `Llama-3.1-8B-Instruct` par QLoRA, puis ajouté un RAG pgvector sur des analyses, chronologies, citations et fiches de personnages. FastAPI assemble le persona, l'historique et les quatre passages les plus proches avant de lancer la génération en streaming.
+
+## Architecture
+
+```text
+Navigateur
+   │
+Cloudflare + Cloudflare Access
+   │
+   ├─ S3 / CloudFront ── React + TypeScript
+   │
+   └─ Worker ── FastAPI catalogue ── PostgreSQL RDS
+                    │
+                    └─ proxy SSE vers le service chatbot
+                                  │
+                         FastAPI RAG / App Runner
+                           ├─ pgvector
+                           └─ vLLM / Modal GPU L4
+                                  │
+                         Llama 3.1 + adapter LoRA HF
+```
+
+Les deux dépôts restent indépendants. Le site ne contacte jamais directement Modal et ne transmet pas la clé du microservice au navigateur; son backend relaie le flux SSE et les sources documentaires.
+
+## Déploiement
+
+Le frontend de la collection est compilé avec Vite puis publié sur S3 derrière CloudFront et Cloudflare. Le backend Docker est construit dans GitHub Actions, poussé dans ECR et déployé sur AWS App Runner. Les objets sont stockés dans PostgreSQL RDS; les secrets sont fournis par l'environnement et AWS SSM.
+
+Le service chatbot suit une chaîne distincte : les jobs QLoRA peuvent être lancés sur SageMaker ou Vertex AI, les runs sont suivis dans Weights & Biases et l'adapter est publié sur Hugging Face Hub. vLLM le sert sur un GPU L4 Modal avec `min_containers=0`; les poids sont conservés dans un volume pour réduire le cold start. L'API RAG est déployée séparément sur App Runner.
+
+## Impact
+
+La collection est administrable sans système de comptes publics : les visiteurs disposent d'une galerie responsive et l'administration conserve un CRUD complet, le contrôle de visibilité et l'ordre d'affichage. Le filtrage à l'edge et le secret injecté côté serveur ferment le contournement direct par l'URL App Runner.
+
+Le pipeline IA est opérationnel de la création du dataset au serving : corpus français versionné, entraînement cloud reproductible, adapter portable, retrieval pgvector et génération streamée. Le proxy et le client SSE sont intégrés au site; la page publique du chatbot reste toutefois présentée comme en cours de finalisation, ce qui distingue clairement le service technique de son ouverture aux visiteurs.
+
+## Apprentissage
+
+J'ai appris à séparer les responsabilités de sécurité entre navigateur, edge et backend. Une route non référencée n'est pas une protection; le contrôle d'écriture doit être imposé par le serveur et le secret ne doit jamais entrer dans le bundle frontend.
+
+Le chatbot m'a également montré la complémentarité entre fine-tuning et RAG : QLoRA façonne le ton et les habitudes de réponse, tandis que la recherche documentaire apporte les faits. Le déploiement scale-to-zero m'a enfin obligé à arbitrer coût, cold start et expérience utilisateur.

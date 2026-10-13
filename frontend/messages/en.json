@@ -2,7 +2,7 @@
   "nav": {
     "home": "Home",
     "proxp": "Experience",
-    "perxp": "Personal Projects",
+    "perxp": "Professional Projects",
     "schoolprojects": "Academic Projects",
     "diplomas": "Education",
     "chat": "AI Assistant"
@@ -12,8 +12,8 @@
     "backToList": "Back to Experience"
   },
   "perxp": {
-    "title": "Personal Projects",
-    "backToList": "Back to Personal Projects"
+    "title": "Professional Projects",
+    "backToList": "Back to Professional Projects"
   },
   "schoolprojects": {
     "title": "Academic Projects",
@@ -53,6 +53,8 @@
     "switch": "Switch language"
   },
   "home": {
-    "photoAlt": "Portrait of Raphaël Montico"
+    "photoAlt": "Portrait of Raphaël Montico",
+    "openToWork": "#OpenToWork",
+    "location": "Geneva and surrounding area"
   }
 }

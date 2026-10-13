@@ -2,39 +2,66 @@
 title: "PulpFiction.fr"
 slug: "pulpfiction"
 order: 3
-tags: ["React", "TypeScript", "FastAPI", "PostgreSQL", "AWS Cognito", "AWS S3", "CloudFront", "App Runner", "Tailwind CSS", "Llama 3.1", "RAG", "vLLM"]
-overview: "Full-stack web application showcasing a Pulp Fiction collection, including an AI chatbot to chat with the movie characters."
+tags: ["React", "TypeScript", "FastAPI", "PostgreSQL", "Cloudflare Access", "AWS", "Llama 3.1", "QLoRA", "RAG", "vLLM", "Modal"]
+overview: "Cloud-native application dedicated to a Pulp Fiction collection, complemented by a RAG chatbot embodying six characters from the film."
 ---
 
-[Pulpfiction.fr](https://pulpfiction.fr) is a full-stack web application, designed to showcase and manage the world's largest collection of Pulp Fiction collectibles, with an emphasis on affiliate links. It also integrates an AI chatbot allowing users to chat with the film's iconic characters (Jules, Vincent, Mia, Marsellus, Butch, Winston Wolf).
+# PulpFiction.fr: Collection and AI Chatbot
 
-This project allowed me to implement, end-to-end, the design, development, and deployment of a production-ready cloud-native application: from database architecture to setting up the continuous deployment pipeline, including access and authentication management, as well as the integration of a fine-tuned generative AI model.
+## Context
 
-# Features
+[PulpFiction.fr](https://pulpfiction.fr) presents and manages a collection of items dedicated to the film, with a public gallery, detailed listings, and affiliate links. I developed the entire application, then a second AI service that lets users chat with Jules, Vincent, Mia, Marsellus, Butch, or Winston Wolf.
 
-- **AI Chatbot** : chat with the film's characters (Llama 3.1 8B fine-tuned, RAG for factual accuracy)
-- Responsive public collection gallery
-- Authentication and account management (AWS Cognito)
-- Admin area with full rights: creation, modification, deletion, and reordering of items, management of their visibility
-- Secure REST API, with server-side verification of access tokens
+The project therefore combines two distinct needs: running a production editorial catalog and building a conversational character that can stay true to the film’s style without making up facts.
 
-# Architecture & Technologies
+## Problem
 
-- **AI & Model** : Llama 3.1 8B Instruct (QLoRA fine-tuning), RAG (pgvector)
-- **AI Inference** : vLLM on serverless Modal infrastructure (scale-to-zero)
-- **Frontend** : React 18, TypeScript, Tailwind CSS, React Router, Vite
-- **Backend** : FastAPI, SQLAlchemy
-- **Database** : PostgreSQL (AWS RDS) with pgvector extension
-- **Authentication** : AWS Cognito via AWS Amplify
-- **Hosting** : frontend on S3 + CloudFront, containerized backend (Docker) on AWS App Runner via ECR
-- **CI/CD** : automated deployment via GitHub Actions
+The gallery needed to remain fast and public, while restricting create, update, delete, visibility, and reordering operations to a single administrator. Since App Runner does not provide a private ingress in this setup, protection could not rely on a route simply being hidden in the frontend.
 
-# Key Highlights
+For the chatbot, a general-purpose model knew the film but could not consistently reproduce each character’s voice. Fine-tuning could reinforce style, but not guarantee factual accuracy; personality learned from data therefore needed to be separated from knowledge retrieved from a document corpus.
 
-- Complete AI pipeline: custom dataset creation (original script parsing, translation), cloud fine-tuning (AWS SageMaker / GCP Vertex AI) and evaluation
-- Integration of a high-performance RAG chatbot with FastAPI and a vector database (pgvector)
-- Serverless and scale-to-zero deployment of LLM inference on Modal, optimizing costs
-- Complete design and implementation of the FastAPI backend, including JWT Cognito token verification (JWKS) and clear separation between public read and authenticated write operations
-- Database modeling (collectibles, user roles) and display order management
-- Setup of a complete AWS infrastructure (S3, CloudFront, RDS, Cognito, App Runner, ECR) with an automated build and deployment pipeline
-- Focus on accessibility, performance (code splitting, optimized images) and mobile compatibility
+## Solution
+
+I built the gallery with React and TypeScript, using a FastAPI API and a PostgreSQL database. Reads are public. Writes require an `X-Admin-Secret` that the browser never knows: Cloudflare Access protects the admin route with OTP, and a Worker injects the secret before forwarding the request to the API.
+
+For the chatbot, I extracted 1,181 dialogues from the screenplay, translated the corpus into French, created 165 pairs from the script, and generated 1,200 synthetic pairs. The final split contains 1,229 training examples and 136 validation examples. I specialized `Llama-3.1-8B-Instruct` with QLoRA, then added pgvector RAG over analyses, timelines, quotes, and character profiles. FastAPI assembles the persona, conversation history, and the four closest passages before starting streaming generation.
+
+## Architecture
+
+```text
+Navigateur
+   │
+Cloudflare + Cloudflare Access
+   │
+   ├─ S3 / CloudFront ── React + TypeScript
+   │
+   └─ Worker ── FastAPI catalogue ── PostgreSQL RDS
+                    │
+                    └─ proxy SSE vers le service chatbot
+                                  │
+                         FastAPI RAG / App Runner
+                           ├─ pgvector
+                           └─ vLLM / Modal GPU L4
+                                  │
+                         Llama 3.1 + adapter LoRA HF
+```
+
+The two repositories remain independent. The site never contacts Modal directly and never sends the microservice key to the browser; its backend relays the SSE stream and the document sources.
+
+## Deployment
+
+The collection frontend is built with Vite and then published to S3 behind CloudFront and Cloudflare. The Docker backend is built in GitHub Actions, pushed to ECR, and deployed to AWS App Runner. Items are stored in PostgreSQL RDS; secrets are provided through the environment and AWS SSM.
+
+The chatbot service follows a separate pipeline: QLoRA jobs can be launched on SageMaker or Vertex AI, runs are tracked in Weights & Biases, and the adapter is published to Hugging Face Hub. vLLM serves it on a Modal L4 GPU with `min_containers=0`; the weights are kept in a volume to reduce cold starts. The RAG API is deployed separately on App Runner.
+
+## Impact
+
+The collection can be managed without a public account system: visitors get a responsive gallery, while the admin interface provides full CRUD, visibility controls, and display ordering. Edge filtering and the server-side injected secret prevent direct access by bypassing the site through the App Runner URL.
+
+The AI pipeline is operational from dataset creation through serving: a versioned French corpus, reproducible cloud training, a portable adapter, pgvector retrieval, and streamed generation. The proxy and SSE client are integrated into the site; however, the public chatbot page is still presented as being finalized, clearly distinguishing the technical service from its availability to visitors.
+
+## Lessons Learned
+
+I learned to separate security responsibilities between the browser, edge, and backend. An unlisted route is not protection; write access must be enforced by the server, and the secret must never be included in the frontend bundle.
+
+The chatbot also showed me how fine-tuning and RAG complement each other: QLoRA shapes tone and response habits, while document retrieval provides the facts. Finally, scale-to-zero deployment forced me to balance cost, cold starts, and user experience.

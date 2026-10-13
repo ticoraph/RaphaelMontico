@@ -1,36 +1,64 @@
 ---
 title: "RaphaelMontico.fr"
 slug: "raphaelmontico"
-order: 1
+order: 2
 tags: ["Next.js", "FastAPI", "PostgreSQL", "pgvector", "RAG", "OpenAI", "Langfuse", "AWS S3", "CloudFront", "App Runner"]
-overview: "Personal AI-native portfolio indexed for a RAG chatbot capable of answering questions about my background and my projects."
+overview: "Bilingual AI-native portfolio whose content powers semantic search and a RAG assistant observable in production."
 ---
 
-[RaphaelMontico.fr](https://raphaelmontico.fr) is my personal portfolio, designed as an "AI-native" project: beyond the classic presentation of my background and projects, all site content (pages, experiences, projects) is indexed to be queried via a RAG (Retrieval Augmented Generation) chatbot.
+# RaphaelMontico.fr: AI-native portfolio
 
-This site serves as both a showcase and an experimentation ground for me to implement an end-to-end AI architecture: content ingestion, semantic search, retrieval-augmented generation, and cloud deployment of a decoupled frontend / AI backend system.
+## Context
 
-# Features
+[RaphaelMontico.fr](https://raphaelmontico.fr) presents my background, experience, and projects in French and English. I chose to make it more than a showcase: the site's actual content powers a semantic search API and an assistant capable of answering visitors' questions about my profile.
 
-- Bilingual portfolio (FR/EN) presenting my background, professional experiences, and personal projects
-- AI assistant backend (RAG) capable of answering natural language questions about my profile, projects, and technical choices, relying on the actual site content (streaming responses) — chat interface integration currently being finalized on the frontend side
-- Semantic search API across all content (pages, experiences, projects), beyond a simple keyword search
-- Response generation via an OpenAI language model
-- Full traceability (observability) of the RAG pipeline with Langfuse: end-to-end traces from user query to streamed response, cost and latency tracking
+The project serves as an ongoing demonstration of a production RAG architecture, from editing MDX pages to streaming a response and observing it in Langfuse.
 
-# Architecture & Technologies
+## Problem
 
-- **Frontend**: Next.js (App Router), TypeScript, Tailwind CSS 4, next-intl (i18n), MDX content (`gray-matter` + `next-mdx-remote`), static export
-- **Backend**: FastAPI, SQLAlchemy async + asyncpg, Alembic
-- **Database**: PostgreSQL + pgvector for embedding storage
-- **AI**: OpenAI embeddings, OpenAI LLM, streaming responses (SSE)
-- **Observability**: Langfuse (SDK v4, based on OpenTelemetry) for tracing LLM calls and the RAG pipeline
-- **Infrastructure**: static frontend on S3 + CloudFront, containerized backend on AWS (API Gateway/App Runner), ingestion and CI/CD pipeline via GitHub Actions
+The site needed to remain fast, indexable, and available independently of the AI backend. At the same time, the chatbot needed a vector database, an embedding model, and an LLM—components incompatible with a simple static export.
 
-# Key Points
+I also needed to maintain two languages without manually duplicating every change, avoid unnecessary re-ingestion, and understand RAG behavior. With an SSE response, the OpenTelemetry trace must remain attached throughout the stream, even after FastAPI's initial return.
 
-- Design of a decoupled architecture: the frontend remains 100% static, with all AI logic (retrieval, LLM call, embeddings) residing in a separately deployed backend
-- Implementation of a dedicated ingestion pipeline transforming the site's MDX content into chunks and then into embeddings stored in pgvector
-- Implementation of an LLM provider abstraction interface allowing models to be changed without impacting the rest of the system
-- Implementation of a complete CI/CD pipeline (lint, tests, build, frontend/backend deployment, re-ingestion on content change)
-- Integration of Langfuse to trace the entire RAG pipeline, including the propagation of OpenTelemetry trace context through streaming responses (a delicate point specifically handled to avoid breaking the trace tree)
+## Solution
+
+I kept French as the editorial source in MDX files. A checksum registry detects modified pages; a script translates only pending content using OpenAI and checks that the collections are in parity. Next.js then generates a fully static bilingual frontend.
+
+A separate pipeline cleans the pages, splits them into chunks, calculates 768-dimensional OpenAI `text-embedding-3-small` embeddings, then synchronizes them to PostgreSQL/pgvector. FastAPI exposes `/api/search` and `/api/chat`. For chat, the question is vectorized, the five closest passages in the requested language are added to the prompt, and GPT-6 Luna returns tokens over SSE along with sources and latency and usage metrics.
+
+## Architecture
+
+```text
+French MDX ── checksums ── OpenAI translation ── English MDX
+      │                                         │
+      ├──────────── Static Next.js ─────────────┘
+      │                    │
+      │               S3 + CloudFront
+      │
+      └─ ingestion → chunks → OpenAI embeddings
+                                  │
+                             PostgreSQL/pgvector
+                                  ▲
+Visitor → FastAPI → retrieval → GPT-6 Luna → SSE
+                    └──────── Langfuse / OpenTelemetry
+```
+
+The frontend remains usable if the AI API is unavailable. The interface for embeddings is separate from the one for the LLM, allowing both responsibilities to evolve without changing the ingestion pipeline or chat contract.
+
+## Deployment
+
+GitHub Actions checks the frontend and backend for every proposed change. On the main branch, the exported frontend is synchronized to S3 and served by CloudFront; the Docker backend is deployed separately on AWS with App Runner/API Gateway and accesses PostgreSQL.
+
+An ingestion workflow is triggered when MDX content or indexing code changes. Alembic migrations version the schema. OpenAI and Langfuse keys stay on the backend; OpenAPI documentation can be disabled in production, and body-size and rate limits protect public routes.
+
+## Impact
+
+A single content source now powers three use cases: portfolio pages, semantic search, and chatbot responses. The site can be browsed as usual or queried in natural language, with the sources used shown alongside the answer rather than an answer that cannot be verified.
+
+Langfuse traces the request, retrieval, and generation, while the final event exposes the model, tokens, and retrieval/generation time. This observability makes it possible to relate quality, latency, and cost without turning the static frontend into an application that depends on the backend.
+
+## What I learned
+
+I learned to treat content as versioned data: translation, indexing, and deployment must respond to its changes deterministically. The checksum registry avoids full processing runs and makes discrepancies between languages visible.
+
+Propagating OpenTelemetry context through an SSE generator also exposed me to a practical asynchronous observability problem. A useful trace must follow the response through to the last token, not stop when FastAPI returns the `StreamingResponse` object.

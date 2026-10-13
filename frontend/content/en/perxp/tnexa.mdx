@@ -1,0 +1,65 @@
+---
+title: "TneXa.fr"
+slug: "tnexa"
+order: 5
+tags: ["Astro", "MDX", "TypeScript", "Cloudflare Workers", "Wrangler", "GitHub Actions", "Accessibilité", "Sécurité"]
+overview: "Static showcase website for TneXa, designed to present its applied artificial intelligence offering, products, projects, and R&D work."
+---
+
+# TneXa.fr: showcasing an AI business
+
+## Context
+
+[TneXa.fr](https://tnexa.fr) is the website for my sole proprietorship, specializing in artificial intelligence systems connected to business data and tools: generative AI, agents, automation, data engineering, and machine learning.
+
+The site needs to make this offering easy to understand, introduce TneGa — a platform of agents deployed in the client’s environment — and connect the company’s positioning to existing live implementations and several research and development projects.
+
+## Problem
+
+The original React/Vite foundation was too generic for a primarily editorial website. Routing, metadata management, and content organization would have had to be built manually, even though the intended product requires neither an API, a database, nor a server-side form.
+
+The other challenge was editorial: bringing together areas of expertise, a product range, implementations, and exploratory projects without making the site feel like a disparate catalog. The site needed to remain fast, accessible, and easy to evolve, while being deliberately closed to search engines and AI crawlers during this phase.
+
+## Solution
+
+I replaced the initial foundation with Astro 7 in static mode. Highly structured pages are written in `.astro`, editorial content in MDX, and shared information — navigation, descriptions, products, and external links — is centralized in a TypeScript registry.
+
+Reusable layouts and components handle the page structure, cards, method steps, and calls to action. The user journey starts with customer problems and outcomes, then presents three areas of expertise, the TneGa product, five implementations, and four R&D projects. The absence of a form and server-side code reduces maintenance and the attack surface.
+
+## Architecture
+
+```text
+TypeScript configuration ── navigation and metadata
+          │
+Astro pages + MDX content
+          │
+Reusable layouts and components
+          │
+       Astro build
+          │
+      Static HTML / CSS
+          │
+Cloudflare Workers Static Assets
+          │
+       tnexa.fr
+```
+
+The `robots.txt`, `_headers`, and metadata files keep crawlers out. The headers also add a Content Security Policy, prohibit iframe embedding, set a permissions policy, and apply a long cache strategy for versioned assets.
+
+## Deployment
+
+GitHub Actions runs `astro check` and then builds on every proposed change. A validated push to `main` then triggers `wrangler deploy`; the GitHub `production` environment can require human approval before publication.
+
+Cloudflare manages DNS and serves the static files through Workers Static Assets. OVHcloud remains the registrar and hosts the `contact@tnexa.fr` mailbox, so the DNS migration preserves the MX, SPF, and DKIM records, which never pass through the Cloudflare proxy. No application secrets or persistent services are required to run the site.
+
+## Impact
+
+The site now brings together three areas of expertise, TneGa, five implementations, and four R&D focus areas under a consistent identity. Content can be edited in MDX without touching the components, while repeated elements remain managed through a single configuration.
+
+The static architecture provides fast pages that are inexpensive to host and independent of a backend. Indexing is blocked at several levels — `robots.txt`, HTTP headers, and metadata — rather than relying on a single convention that crawlers follow inconsistently.
+
+## What I Learned
+
+This project taught me to choose an architecture proportionate to the need. A content website does not need a permanent application runtime: Astro and MDX provide the editorial framework, typing, and reusability required without introducing an unnecessary server.
+
+Going live also reminded me that deploying a website involves more than publishing files. DNS changes must preserve email, security headers are part of the product, and an indexing policy must be explicit at every delivery layer.

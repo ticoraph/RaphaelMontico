@@ -2,8 +2,8 @@
   "version": 1,
   "files": {
     "messages/fr.json": {
-      "checksum": "264f5ac18bdbab5b1b117e2c88332b3719df506ae8c8902904818d0d4f8a73ba",
-      "translatedAt": "2026-10-13T09:48:45.970Z",
+      "checksum": "b9b96c51f8b076d8689b151540ba26cadd6c3b56e84801d5a4e401da6af5a853",
+      "translatedAt": "2026-10-13T11:53:37.236Z",
       "enFile": "messages/en.json",
       "status": "up-to-date"
     },
@@ -68,26 +68,26 @@
       "status": "up-to-date"
     },
     "content/fr/perxp/pulpfiction.mdx": {
-      "checksum": "a64c422c0915a20228e505ab329451778013ba1b7eb2bc30ed22b29b89022979",
-      "translatedAt": "2026-10-13T09:48:45.964Z",
+      "checksum": "0ca20943723d0b929b91f559e01ffa413a846165a285bd53d516542cfa1f22ea",
+      "translatedAt": "2026-10-13T11:57:03.222Z",
       "enFile": "content/en/perxp/pulpfiction.mdx",
       "status": "up-to-date"
     },
     "content/fr/perxp/raphaelmontico.mdx": {
-      "checksum": "b51882ab98611c530849a87a144d4445fef772259a7ff6a78a865fa5c9020059",
-      "translatedAt": "2026-10-13T09:48:45.964Z",
+      "checksum": "dc5c24878f32c7d38f158bb8587468d598058b1013a5f027ef75541aefd225b1",
+      "translatedAt": "2026-10-13T11:57:09.840Z",
       "enFile": "content/en/perxp/raphaelmontico.mdx",
       "status": "up-to-date"
     },
     "content/fr/perxp/skipri.mdx": {
-      "checksum": "c4bb1466834e44c6995865dfcb164270c2314b38e4cf014f4c4151257e5b470e",
-      "translatedAt": "2026-10-13T09:48:45.964Z",
+      "checksum": "294b8d3c4deee0a71f074b587a02e6552799f3e0e104edfb3e711cc93259c5a5",
+      "translatedAt": "2026-10-13T11:57:18.574Z",
       "enFile": "content/en/perxp/skipri.mdx",
       "status": "up-to-date"
     },
     "content/fr/perxp/watt.mdx": {
-      "checksum": "c5e8690a9e87cc37b46ecfc1b4ab99781fdbb7187de0841d0eddb3271e99fa9b",
-      "translatedAt": "2026-10-13T09:48:45.964Z",
+      "checksum": "29fbf5e4326d158c694569bc39a2493e6674c0892fd00d38128d069bc1c4c248",
+      "translatedAt": "2026-10-13T11:57:41.645Z",
       "enFile": "content/en/perxp/watt.mdx",
       "status": "up-to-date"
     },
@@ -200,11 +200,29 @@
       "status": "up-to-date"
     },
     "content/fr/home.mdx": {
-      "checksum": "f268286448838b92a82ada712241c46f75de3b764864c5b23aeb502e30d8b46d",
-      "translatedAt": "2026-10-13T09:48:45.960Z",
+      "checksum": "e61ca91406d06215bb7d4d8e9c492acfdde45dae9b4d2978321de140d0d2563f",
+      "translatedAt": "2026-10-13T11:56:53.830Z",
       "enFile": "content/en/home.mdx",
+      "status": "up-to-date"
+    },
+    "content/fr/proxp/master-openclassrooms.mdx": {
+      "checksum": "04ba427ee0c3fa714001c1b4c2018ace567bfe3d84742b4b2e10fe9afe41c031",
+      "translatedAt": "2026-10-13T11:53:37.232Z",
+      "enFile": "content/en/proxp/master-openclassrooms.mdx",
+      "status": "up-to-date"
+    },
+    "content/fr/perxp/surpri.mdx": {
+      "checksum": "807f8cca4c854de51aa2d3471d4da2af38bf5553167a657ce0057be7484a230a",
+      "translatedAt": "2026-10-13T11:57:26.299Z",
+      "enFile": "content/en/perxp/surpri.mdx",
+      "status": "up-to-date"
+    },
+    "content/fr/perxp/tnexa.mdx": {
+      "checksum": "edbc94d7fe1aebf3bf39886e778c38e26d91787915e4850840d4d5a9566a6cc9",
+      "translatedAt": "2026-10-13T11:57:34.428Z",
+      "enFile": "content/en/perxp/tnexa.mdx",
       "status": "up-to-date"
     }
   },
-  "updatedAt": "2026-10-13T09:48:45.970Z"
+  "updatedAt": "2026-10-13T11:57:41.645Z"
 }

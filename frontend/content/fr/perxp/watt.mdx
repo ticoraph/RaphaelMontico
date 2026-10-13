@@ -1,39 +1,68 @@
 ---
 title: "Watt"
 slug: "watt"
-order: 2
-tags: ["React", "TypeScript", "FastAPI", "SQLAlchemy", "SQLite", "MLflow", "XGBoost", "Google Cloud Run", "Firebase Hosting"]
-overview: "Plateforme full-stack de suivi et de prévision de la consommation électrique domestique, avec pipeline de données multi-sources et modèles de machine learning."
+order: 4
+tags: ["React", "TypeScript", "FastAPI", "SQLite", "MLflow", "XGBoost", "Chronos2", "TimesFM", "Qwen3", "Google Cloud Run", "Firebase Hosting"]
+overview: "Plateforme énergétique qui agrège six sources domestiques, compare des modèles de prévision et publie tableaux de bord, forecasts et analyses LLM."
 ---
 
-**Watt** est une application web full-stack développée pour importer, visualiser et prévoir la consommation d'énergie domestique : import quotidien des données de consommation, d'index et de puissance de pointe, visualisation des tendances, et prévision de la consommation future par machine learning.
+# Watt : suivi et prévision de l'énergie domestique
 
-Ce projet couvre l'ensemble de la chaîne : agrégation de données depuis de multiples sources hétérogènes (fournisseur d'électricité, panneaux solaires, véhicule électrique, capteurs domestiques, météo, eau), API backend sécurisée, entraînement et suivi de modèles prédictifs, et déploiement cloud automatisé.
+## Contexte
 
-# Fonctionnalités
+[Watt](https://watt.tnera.fr) est une application que j'ai développée pour réunir ma consommation électrique, ma production solaire, la recharge du véhicule, des capteurs domestiques, la météo et les relevés d'eau. Elle remplace des exports dispersés par une série quotidienne commune, consultable et exploitable pour la prévision.
 
-- Dashboard avec indicateurs clés (consommation totale/moyenne, puissance de pointe) et graphique de consommation mensuelle
-- Pages de détail par source : EcoFlow (solaire/batterie), Enedis (index compteur, puissance de pointe), Tesla (recharge véhicule), Climat (température/précipitations), Coût
-- Feature Engineering : matrice de corrélation de Pearson côté client et graphique d'importance des variables (XGBoost) calculé côté serveur
-- Prédictions : comparaison de backtests entre modèles (Chronos2, TimesFM, XGBoost, Prophet, moyenne saisonnière) avec métriques MAE/RMSE/biais/MAPE, et prévision de production avec bandes d'incertitude p10/p90
-- Analyse LLM : rapport généré localement par un modèle Qwen3-4B, comparant les backtests et expliquant les anomalies en français
-- Visualiseur de la base SQLite brute
-- Authentification Google (Firebase Auth) avec liste blanche d'emails vérifiée côté serveur
+Le produit associe un dashboard, des vues par source, du feature engineering, la comparaison de modèles de séries temporelles, un registre MLflow et un rapport d'analyse généré localement par un LLM.
 
-# Architecture & technologies
+## Problème
 
-- **Frontend** : React, Vite, TypeScript, Tailwind CSS, React Query, Recharts
-- **Backend** : FastAPI, SQLAlchemy 2.0, SQLite
-- **Machine learning** : MLflow (tracking et registre de modèles), XGBoost, TimesFM, Chronos2, Prophet
-- **LLM local** : Qwen3-4B (GGUF) via llama-cpp-python
-- **Authentification** : Firebase Auth (Google Sign-In)
-- **Infrastructure** : Google Cloud Run, Artifact Registry, Cloud SQL, Firebase Hosting, Terraform
-- **CI/CD** : GitHub Actions (build/test + déploiement via Workload Identity Federation, sans clé JSON)
+Chaque fournisseur impose son propre accès et son propre format. Enedis fournit des exports, EcoFlow et Tesla nécessitent la réutilisation de captures d'application, Aqara stocke une partie de l'historique dans un cache SQLite local, l'eau n'offre que quelques relevés annuels et la météo vient d'une autre source.
 
-# Points clés
+Ces données ont des granularités, unités et périodes différentes. Les agréger sans doublon ni écrasement, puis comparer équitablement des modèles zero-shot, supervisés et saisonniers demandait une chaîne reproductible et des backtests communs.
 
-- Conception d'un pipeline de données multi-sources (Enedis, EcoFlow, Tesla, Aqara, relevé d'eau, météo) allant du scraping/import brut jusqu'à un jeu de données unique, nettoyé et enrichi, prêt pour l'entraînement
-- Feature engineering avancé (rendement solaire par heure d'ensoleillement, résidus vs tendance, amplitude thermique) alimentant une matrice de corrélation et un modèle XGBoost d'importance des variables
-- Entraînement, suivi et comparaison de plusieurs modèles de prévision de séries temporelles (XGBoost, TimesFM, Chronos2, Prophet) via un serveur MLflow déployé en production
-- Génération de rapports d'analyse en français par un LLM exécuté localement, intégrés en lecture seule dans l'application
-- Mise en place d'une infrastructure cloud complète (Cloud Run pour l'API et le serveur MLflow, Firebase Hosting pour le frontend) avec déploiement continu automatisé et authentification sans clé statique
+## Solution
+
+J'ai développé un importeur par source, puis un pipeline qui produit un CSV quotidien dédupliqué pour Enedis, EcoFlow, Tesla, Aqara, l'eau et le climat. Les fichiers sont joints par date, nettoyés et enrichis avant une importation idempotente dans SQLite. Le schéma s'adapte aux nouvelles colonnes et complète uniquement les valeurs encore absentes.
+
+Le feature engineering calcule notamment rendement solaire par heure d'ensoleillement, résidu par rapport à une tendance, part heures creuses nette de la Tesla et de la pompe à chaleur, et amplitude thermique. Le dataset alimente XGBoost, TimesFM, Chronos2, Prophet et une moyenne saisonnière. Chaque script produit le même format de backtest; MLflow enregistre paramètres, métriques et modèles, puis une promotion manuelle choisit la version utilisée pour la prévision avec bandes p10/p50/p90. Un Qwen3-4B quantifié analyse hors ligne les erreurs et anomalies en français.
+
+## Architecture
+
+```text
+Enedis │ EcoFlow │ Tesla │ Aqara │ Eau │ Météo
+                    │
+        imports et séries quotidiennes
+                    │
+       jointure + transformations + features
+                    │
+                 SQLite
+          ┌─────────┴─────────┐
+          ▼                   ▼
+       FastAPI          entraînements ML
+          │          XGBoost / TimesFM /
+          │          Chronos2 / Prophet
+          │                   │
+          │                 MLflow
+          │                   │
+          └──── React ── forecasts + rapport Qwen
+```
+
+Un Makefile et un flow Prefect enchaînent préparation, entraînement, promotion et analyse. Les étapes qui exigent une connexion ou une capture mobile restent explicites dans le runbook mensuel.
+
+## Déploiement
+
+L'API FastAPI et le serveur MLflow sont déployés dans deux services Google Cloud Run. Le frontend React/Vite est publié sur Firebase Hosting, qui réécrit `/api/**` et `/mlflow/**` vers les services correspondants pour conserver une origine unique. L'authentification Google passe par Firebase Auth et une liste blanche vérifiée côté API.
+
+GitHub Actions utilise Workload Identity Federation, sans clé JSON statique, pour construire les images, les publier dans Artifact Registry et déployer les services. La base SQLite, les forecasts et le registre MLflow validés sont embarqués comme artefacts en lecture dans la version publiée. La CI exécute Ruff, Pytest et le build frontend.
+
+## Impact
+
+Watt rend consultables au même endroit les consommations, puissances de pointe, coûts, production solaire, recharge, températures et précipitations depuis 2022. Les backtests de cinq approches sont comparables par MAE, RMSE, biais et MAPE; la prévision sélectionnée affiche son incertitude au lieu d'un unique chiffre.
+
+Le serveur MLflow est accessible dans l'application déployée, tandis que le rapport Qwen explique les différences entre modèles sans envoyer les données domestiques à un service LLM distant. La sélection du modèle reste une décision humaine fondée sur les backtests, pas une promotion automatique déclenchée par la CI.
+
+## Apprentissage
+
+J'ai appris qu'un projet de séries temporelles personnel est d'abord un problème d'acquisition et de qualité. Les limites des fournisseurs — tokens courts, caches partiels, relevés annuels — doivent apparaître dans le pipeline et dans les hypothèses du modèle.
+
+La comparaison de modèles très différents m'a également appris à imposer un protocole commun et à conserver une baseline simple. Enfin, séparer calcul hors ligne et API de lecture rend le service cloud plus prévisible : l'application sert des artefacts validés sans déclencher un entraînement ou un LLM lourd à chaque consultation.
