@@ -48,8 +48,8 @@ const EXAMPLE_CHUNK_TEXT = `{
   "slug": "raphaelmontico",
   "section": "Architecture & technologies",
   "language": "fr",
-  "tags": ["Next.js", "FastAPI", "PostgreSQL", "pgvector", "RAG", "Gemini", "OpenAI"],
-  "content": "- Frontend : Next.js (App Router), TypeScript, Tailwind CSS 4, next-intl (i18n)\\n- Backend : FastAPI, SQLAlchemy async + asyncpg, Alembic\\n- Base de données : PostgreSQL + pgvector pour le stockage des embeddings\\n- IA : embeddings Gemini, LLM OpenAI, réponses en streaming (SSE)",
+  "tags": ["Next.js", "FastAPI", "PostgreSQL", "pgvector", "RAG", "OpenAI"],
+  "content": "- Frontend : Next.js (App Router), TypeScript, Tailwind CSS 4, next-intl (i18n)\\n- Backend : FastAPI, SQLAlchemy async + asyncpg, Alembic\\n- Base de données : PostgreSQL + pgvector pour le stockage des embeddings\\n- IA : embeddings OpenAI, LLM OpenAI, réponses en streaming (SSE)",
   "score": 0.82
 }`;
 

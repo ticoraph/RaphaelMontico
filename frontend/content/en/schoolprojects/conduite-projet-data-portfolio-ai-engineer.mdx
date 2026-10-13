@@ -21,9 +21,9 @@ The content had to remain the source of truth, without being manually duplicated
 
 ## Solution
 
-I structured my experience, diplomas, and projects in MDX, with French as the editorial source. A script detects pages modified by checksum and prepares their English translations. Whenever the content changes, an ingestion pipeline splits the pages into chunks, computes Gemini embeddings, and syncs the chunks to PostgreSQL with pgvector.
+I structured my experience, diplomas, and projects in MDX, with French as the editorial source. A script detects pages modified by checksum and prepares their English translations. Whenever the content changes, an ingestion pipeline splits the pages into chunks, computes OpenAI embeddings, and syncs the chunks to PostgreSQL with pgvector.
 
-The statically exported Next.js frontend presents the portfolio. The FastAPI backend provides similarity search and an SSE streaming RAG chat, with Gemini or OpenAI as interchangeable providers. This architecture turns the site into an interactive demonstration rather than a static catalog.
+The statically exported Next.js frontend presents the portfolio. The FastAPI backend provides similarity search and an SSE streaming RAG chat, with OpenAI for generation. This architecture turns the site into an interactive demonstration rather than a static catalog.
 
 ## Architecture
 
@@ -37,7 +37,7 @@ French MDX content ── controlled translation ── English content
       └─ chunking → embeddings → PostgreSQL/pgvector
                                       ▲
 User → FastAPI → search / RAG chat ──┘
-                    └─ Gemini or OpenAI
+                    └─ OpenAI
 ```
 
 Separating the frontend and backend keeps the site accessible even if the AI service is unavailable. The checksum registry avoids unnecessarily retranslating every page and makes French/English discrepancies visible.

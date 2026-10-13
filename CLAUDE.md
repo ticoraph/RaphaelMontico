@@ -14,7 +14,7 @@ detail: `backend/README.md`. Translation tooling: `docs/TRANSLATION.md`.
 frontend (Next.js, static export)  →  S3 + CloudFront
 backend  (FastAPI)                 →  API Gateway / App Runner
   ├─ ingest/   MDX content → chunks → embeddings → pgvector
-  └─ app/      API (chat streaming SSE, semantic search, OpenAI/Gemini providers)
+  └─ app/      API (chat streaming SSE, semantic search, OpenAI providers)
 PostgreSQL + pgvector              →  chunk + embedding storage
 ```
 
@@ -42,7 +42,7 @@ npm run lint
 ```bash
 python -m venv .venv && source .venv/bin/activate   # or use existing backend/.venv
 pip install -r requirements-dev.txt
-cp .env.example .env             # fill in OPENAI_API_KEY, GEMINI_API_KEY (embeddings), LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL
+cp .env.example .env             # fill in OPENAI_API_KEY (chat + embeddings), LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASE_URL
 docker compose up -d postgres    # PostgreSQL 16 + pgvector (docker-compose.yml lives in backend/)
 alembic upgrade head
 python -m ingest                 # indexes frontend/content/ into pgvector — run from backend/
@@ -74,9 +74,9 @@ array when adding a content folder under `frontend/content/`.
 
 ## Backend architecture
 
-- `app/providers/` — `EmbeddingProvider` / `LLMProvider` interfaces with OpenAI (default chat LLM, `OPENAI_CHAT_MODEL`) and Gemini implementations;
+- `app/providers/` — `EmbeddingProvider` / `LLMProvider` interfaces with OpenAI implementations (chat LLM `OPENAI_CHAT_MODEL`, embeddings `EMBEDDING_MODEL`);
   `registry.py` selects the provider (`get_llm_provider("openai")`, driven by `LLM_PROVIDER`).
-  Embeddings are still Gemini only.
+  Embeddings use `text-embedding-3-small` truncated to `EMBEDDING_DIM` (768) via the `dimensions` parameter.
 - `app/db/retriever.py` — cosine-distance pgvector search, optional `type`/`language` filters,
   `score = 1 - distance`.
 - `app/db/models.py` — `chunks` table (`type`, `title`, `slug`, `section`, `language`, `source_path`,

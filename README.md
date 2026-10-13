@@ -9,7 +9,7 @@ Portfolio AI-native de Raphaël Montico : un site Next.js statique (FR/EN) coupl
 - **Portfolio** : parcours pro, projets personnels et scolaires, diplômes — en FR/EN
 - **Recherche sémantique** : `POST /api/search` interroge les contenus indexés par similarité vectorielle plutôt que par mot-clé
 - **Assistant IA (RAG)** : `POST /api/chat` répond en streaming (SSE) à des questions sur le profil et les projets, via le fournisseur choisi dans `.env` ; l'interface de chat côté frontend est en cours de finalisation
-- **Ingestion automatisée** : le contenu MDX est ré-indexé automatiquement (embeddings Gemini → pgvector) à chaque changement, via GitHub Actions
+- **Ingestion automatisée** : le contenu MDX est ré-indexé automatiquement (embeddings OpenAI → pgvector) à chaque changement, via GitHub Actions
 
 ## Architecture
 
@@ -17,7 +17,7 @@ Portfolio AI-native de Raphaël Montico : un site Next.js statique (FR/EN) coupl
 frontend (Next.js, export statique)  →  S3 + CloudFront
 backend  (FastAPI)                   →  API Gateway / App Runner
   ├─ ingest/   pipeline d'ingestion du contenu MDX → chunks → embeddings → pgvector
-  └─ app/      API (chat streaming SSE, recherche sémantique, providers OpenAI/Gemini)
+  └─ app/      API (chat streaming SSE, recherche sémantique, providers OpenAI)
 PostgreSQL + pgvector                →  stockage des chunks et de leurs embeddings
 ```
 
@@ -38,7 +38,7 @@ tests/      Vérification de parité de contenu FR/EN (nombre de pages MDX par c
 
 - **Frontend** : Next.js (App Router), TypeScript, Tailwind CSS v4, [next-intl](https://next-intl.dev) (i18n), MDX (`gray-matter` + `next-mdx-remote`)
 - **Backend** : FastAPI, SQLAlchemy (async) + asyncpg, Alembic, PostgreSQL + pgvector
-- **IA** : embeddings Gemini, LLM OpenAI GPT-6 Luna (réponses en streaming SSE ; Gemini reste sélectionnable via `LLM_PROVIDER`)
+- **IA** : embeddings OpenAI (`text-embedding-3-small`), LLM OpenAI GPT-6 Luna (réponses en streaming SSE)
 - **Infra** : AWS (S3 + CloudFront pour le frontend, API Gateway/App Runner + Postgres pour le backend), GitHub Actions pour CI/CD et l'ingestion de contenu
 
 ## Démarrer en local
@@ -57,7 +57,7 @@ Ouvrir [http://localhost:3000](http://localhost:3000) (redirige vers `/fr`). Dé
 
 ```bash
 cd backend
-cp .env.example .env   # renseigner OPENAI_API_KEY et GEMINI_API_KEY (LLM_PROVIDER=openai par défaut)
+cp .env.example .env   # renseigner OPENAI_API_KEY
 docker compose up -d postgres
 pip install -r requirements-dev.txt
 alembic upgrade head

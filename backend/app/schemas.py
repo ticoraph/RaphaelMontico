@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, StringConstraints
 
 ChunkType = Literal["blog_post", "project", "experience", "diploma", "page_section"]
 Language = Literal["en", "fr"]
-ModelName = Literal["gemini", "openai"]
+ModelName = Literal["openai"]
 
 # Input bounds for the public endpoints (mirrored in frontend/lib/chat.ts).
 MAX_MESSAGE_CHARS = 2000

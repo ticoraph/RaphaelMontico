@@ -29,13 +29,13 @@ jobs:
       - name: Run DB migrations
         # Applied before the new image is deployed, so App Runner never serves
         # code that expects a schema that isn't there yet. DATABASE_URL here is a
-        # GitHub Actions secret distinct from the Gemini key App Runner itself
+        # GitHub Actions secret distinct from the secrets App Runner itself
         # gets from Secrets Manager — this job runs in GH Actions, not in the
         # App Runner container, so it needs its own way to reach Postgres
         # (requires the DB to be network-reachable from the runner; see the infra repo).
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          GEMINI_API_KEY: unused-by-migrations
+          OPENAI_API_KEY: unused-by-migrations
         run: |
           cd backend
           pip install -r requirements.txt

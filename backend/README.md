@@ -2,22 +2,21 @@
 
 API FastAPI qui expose un chatbot RAG et une recherche sémantique sur le contenu
 du site (`frontend/content/`). Les documents MDX sont découpés en chunks,
-vectorisés avec les embeddings Gemini, et stockés dans PostgreSQL + pgvector.
+vectorisés avec les embeddings OpenAI, et stockés dans PostgreSQL + pgvector.
 
 ## Architecture
 
 - **FastAPI** — API framework
 - **SQLAlchemy + asyncpg** — async PostgreSQL access
 - **pgvector** — HNSW index for cosine distance similarity search
-- **openai** — OpenAI client (Responses API) for the chat LLM
-- **google-genai** — Gemini API client (embeddings, optional chat provider)
+- **openai** — OpenAI client (Responses API for the chat LLM, Embeddings API for the vectors)
 - **Langfuse (v4)** — LLM observability and tracing
 - **pytest** — integration and unit testing
 
 ```
 frontend/content/**.mdx ──(ingestion CI)──▶ PostgreSQL + pgvector (table `chunks`)
                                                     │
-POST /api/chat ── embed query (Gemini) ── similarity_search (cosine, top_k=5)
+POST /api/chat ── embed query (OpenAI) ── similarity_search (cosine, top_k=5)
                                                     │
                               prompt système + chunks ──▶ LLM (OpenAI)
                                                     │
@@ -26,8 +25,8 @@ POST /api/chat ── embed query (Gemini) ── similarity_search (cosine, top
 
 | Composant | Fichier(s) | Rôle |
 |---|---|---|
-| Providers | `app/providers/` | Interfaces `EmbeddingProvider` / `LLMProvider` + implémentations OpenAI (chat par défaut) et Gemini. `registry.py` fait la sélection (`get_llm_provider("openai")`, pilotée par `LLM_PROVIDER`). |
-| Embeddings | `app/providers/embedding_gemini.py` | `gemini-embedding-001`, 768 dimensions (fixé par la migration — voir `EMBEDDING_DIM` dans `app/db/models.py`). |
+| Providers | `app/providers/` | Interfaces `EmbeddingProvider` / `LLMProvider` + implémentations OpenAI (chat et embeddings). `registry.py` fait la sélection (`get_llm_provider("openai")`, pilotée par `LLM_PROVIDER`). |
+| Embeddings | `app/providers/embedding_openai.py` | `text-embedding-3-small` tronqué à 768 dimensions via le paramètre `dimensions` (fixé par la migration — voir `EMBEDDING_DIM` dans `app/db/models.py`). |
 | Retriever | `app/db/retriever.py` | Recherche par distance cosinus pgvector, filtres optionnels `type` / `language`, score = `1 - distance`. |
 | Prompt RAG | `app/rag/prompt.py` | Injecte les chunks récupérés dans un prompt système en français (réponses ancrées dans les sources uniquement) et construit les objets de citation. |
 | Modèle de données | `app/db/models.py` | Table `chunks` : `type`, `title`, `slug`, `section`, `language`, `source_path`, `chunk_index`, `content`, `tags`, `timestamp`, `embedding Vector(768)`. Index HNSW cosinus. |
@@ -68,13 +67,13 @@ Point d'entrée : `python -m ingest` (depuis `backend/`). Étapes :
    (`#` à `######`), un chunk par section ; document entier si aucun titre.
 
 3. **Embedding + upsert** (`ingest/pipeline.py`) — vectorisation par lot
-   (`task_type=RETRIEVAL_DOCUMENT`), upsert Postgres sur
+   (upsert Postgres sur
    `(source_path, chunk_index)`, suppression des chunks des fichiers disparus
    et des chunks excédentaires en fin de document.
 
 **Déclenchement CI** : `.github/workflows/ingest.yml` relance l'ingestion à
 chaque push sur `main` touchant `frontend/content/**` ou `backend/ingest/**`
-(secrets `DATABASE_URL` + `GEMINI_API_KEY`). Le `Dockerfile` ne copie
+(secrets `DATABASE_URL` + `OPENAI_API_KEY`). Le `Dockerfile` ne copie
 volontairement pas `ingest/` : l'ingestion ne tourne jamais dans le conteneur
 déployé.
 
@@ -85,13 +84,11 @@ Copiez `.env.example` vers `.env`. Les variables :
 | Variable | Requis | Description |
 |---|---|---|
 | `DATABASE_URL` | ✅ | `postgresql://...` (normalisé automatiquement en `postgresql+asyncpg://`). |
-| `OPENAI_API_KEY` | ✅ | Chat OpenAI (fournisseur par défaut). |
-| `GEMINI_API_KEY` | ✅ | Embeddings Gemini (et chat si `LLM_PROVIDER=gemini`). |
-| `LLM_PROVIDER` | — | `openai` (défaut) ou `gemini`. N'affecte que le chat, pas les embeddings. |
+| `OPENAI_API_KEY` | ✅ | Chat et embeddings OpenAI. |
+| `LLM_PROVIDER` | — | `openai` (seule valeur supportée). |
 | `ALLOWED_ORIGINS` | — | Origines CORS, séparées par des virgules. |
-| `EMBEDDING_MODEL` / `EMBEDDING_DIM` | — | Défauts : `gemini-embedding-001` / `768`. Changer la dimension implique migration + ré-ingestion complète. |
+| `EMBEDDING_MODEL` / `EMBEDDING_DIM` | — | Défauts : `text-embedding-3-small` / `768`. Changer la dimension implique migration + ré-ingestion complète. |
 | `OPENAI_CHAT_MODEL` | — | Défaut : `gpt-6-luna`. |
-| `GEMINI_CHAT_MODEL` | — | Défaut : `gemini-3.5-flash-lite` (si `LLM_PROVIDER=gemini`). |
 | `TRUSTED_PROXY_HOPS` | — | Nombre de reverse proxies devant l'API qui ajoutent leur entrée à `X-Forwarded-For` (défaut `1` = App Runner seul ; `2` avec API Gateway devant ; `0` = ignorer l'en-tête). Sert à identifier l'IP appelante pour le rate limiting. **À vérifier après un déploiement.** |
 | `CHAT_RATE_LIMIT_PER_MINUTE` / `_PER_HOUR` | — | Limites par IP sur `/api/chat` (défauts `8` / `60`). |
 | `CHAT_GLOBAL_LIMIT_PER_HOUR` | — | Plafond toutes IP confondues sur `/api/chat` (défaut `500`) : borne le coût LLM, au prix d'un déni de service possible si quelqu'un l'épuise. |
@@ -119,7 +116,7 @@ coûte des tokens LLM / embeddings :
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env          # renseigner OPENAI_API_KEY et GEMINI_API_KEY
+cp .env.example .env          # renseigner OPENAI_API_KEY
 
 docker compose up -d postgres # PostgreSQL 16 + pgvector
 alembic upgrade head          # crée/synchronise la table chunks

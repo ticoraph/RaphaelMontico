@@ -53,4 +53,4 @@ Pour ajouter du contenu réel, remplacer les fichiers placeholder existants par 
 
 ## Hors scope (phases futures)
 
-Le pipeline RAG (embeddings Gemini, pgvector, retrieval), le chatbot fonctionnel côté frontend ne sont pas encore implémentés.
+Le pipeline RAG (embeddings OpenAI, pgvector, retrieval), le chatbot fonctionnel côté frontend ne sont pas encore implémentés.

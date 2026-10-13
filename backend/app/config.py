@@ -8,11 +8,9 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str
-    gemini_api_key: str
-    openai_api_key: str = ""
+    openai_api_key: str
 
-    # Fournisseur de génération uniquement. Les embeddings restent sur Gemini.
-    llm_provider: Literal["gemini", "openai"] = "openai"
+    llm_provider: Literal["openai"] = "openai"
 
     langfuse_secret_key: str = ""
     langfuse_public_key: str = ""
@@ -22,10 +20,9 @@ class Settings(BaseSettings):
     # env var, which breaks the plain comma-separated form set in .env/App Runner.
     allowed_origins: Annotated[list[str], NoDecode] = []
 
-    embedding_model: str = "gemini-embedding-001"
+    embedding_model: str = "text-embedding-3-small"
     embedding_dim: int = 768
 
-    gemini_chat_model: str = "gemini-3.5-flash-lite"
     openai_chat_model: str = "gpt-6-luna"
 
     log_level: str = "INFO"

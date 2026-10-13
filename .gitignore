@@ -36,9 +36,7 @@ yarn-error.log*
 next-env.d.ts
 
 # project: private working notes, never versioned
-docs/PRESENTATION-ENTRETIEN.*
-docs/Article_*
-docs/cv-archive-*
+docs
 
 # CV PDFs are not versioned (personal data)
 frontend/public/*.pdf

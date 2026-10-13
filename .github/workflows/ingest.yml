@@ -28,7 +28,7 @@ jobs:
       - name: Run ingestion
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           cd backend
           python -m ingest

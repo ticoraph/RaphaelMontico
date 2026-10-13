@@ -24,7 +24,6 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://backend:backend@localhost:5432/backend
-      GEMINI_API_KEY: ci-placeholder
       OPENAI_API_KEY: ci-placeholder
       ALLOWED_ORIGINS: http://localhost:3000
     steps:

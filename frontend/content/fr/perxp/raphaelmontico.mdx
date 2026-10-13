@@ -2,7 +2,7 @@
 title: "RaphaelMontico.fr"
 slug: "raphaelmontico"
 order: 1
-tags: ["Next.js", "FastAPI", "PostgreSQL", "pgvector", "RAG", "Gemini", "OpenAI", "Langfuse", "AWS S3", "CloudFront", "App Runner"]
+tags: ["Next.js", "FastAPI", "PostgreSQL", "pgvector", "RAG", "OpenAI", "Langfuse", "AWS S3", "CloudFront", "App Runner"]
 overview: "Portfolio personnel AI-native indexé pour un chatbot RAG capable de répondre à des questions sur mon parcours et mes projets."
 ---
 
@@ -23,7 +23,7 @@ Ce site me sert à la fois de vitrine et de terrain d'expérimentation pour mett
 - **Frontend** : Next.js (App Router), TypeScript, Tailwind CSS 4, next-intl (i18n), contenu en MDX (`gray-matter` + `next-mdx-remote`), export statique
 - **Backend** : FastAPI, SQLAlchemy async + asyncpg, Alembic
 - **Base de données** : PostgreSQL + pgvector pour le stockage des embeddings
-- **IA** : embeddings Gemini, LLM OpenAI, réponses en streaming (SSE)
+- **IA** : embeddings OpenAI, LLM OpenAI, réponses en streaming (SSE)
 - **Observabilité** : Langfuse (SDK v4, basé sur OpenTelemetry) pour la traçabilité des appels LLM et du pipeline RAG
 - **Infrastructure** : frontend statique sur S3 + CloudFront, backend conteneurisé sur AWS (API Gateway/App Runner), pipeline d'ingestion et CI/CD via GitHub Actions
 
