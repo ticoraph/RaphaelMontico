@@ -1,0 +1,66 @@
+---
+title: "Segmentation vestimentaire avec Hugging Face"
+slug: "segmentation-vestimentaire-hugging-face"
+tags: ["Python", "Computer Vision", "Image Segmentation", "Hugging Face", "SegFormer", "REST API", "NumPy", "Pillow", "Matplotlib"]
+overview: "Pipeline de segmentation sémantique qui contrôle les images, appelle SegFormer via Hugging Face, reconstruit les masques et mesure IoU et Dice sur 46 exemples."
+---
+
+# Segmentation vestimentaire avec Hugging Face
+
+## Contexte
+
+Pour FashionTrendIntelligence, j'ai évalué la possibilité d'analyser automatiquement les vêtements portés sur des images d'influenceurs. Plutôt que d'entraîner immédiatement un modèle, j'ai construit un prototype autour de `sayeed99/segformer_b3_clothes`, servi par l'API d'inférence Hugging Face.
+
+Le but était de valider toute la chaîne — conformité des images, appel distant, décodage, visualisation et évaluation — avant de décider d'une solution à plus grande échelle.
+
+## Problème
+
+L'API renvoie des masques encodés qui doivent être remis à la taille de l'image et associés à 18 classes de vêtements ou parties du corps. Des fichiers de format ou dimensions incorrectes peuvent fausser la comparaison avec les masques de référence.
+
+La Pixel Accuracy seule est également trompeuse en segmentation, car le fond occupe une grande partie de l'image. Il fallait compléter cette mesure par l'IoU et le Dice Score.
+
+## Solution
+
+J'ai consolidé le pipeline dans `NotebookFinal.ipynb`. Chaque entrée doit être une image PNG de 400 × 600 pixels; les fichiers non conformes et leurs masques sont déplacés dans des dossiers dédiés. Les images valides sont encodées en base64 puis envoyées à l'endpoint Hugging Face avec un token lu depuis l'environnement.
+
+La réponse est décodée en tableau NumPy, redimensionnée puis sauvegardée dans `MaskPrediction/`. Une palette commune colorise vérité terrain et prédiction, et le notebook crée des comparaisons côte à côte dans `IMGConcat/`. Les métriques sont calculées pour chaque fichier puis agrégées.
+
+## Architecture
+
+```text
+IMG/ + Mask/
+      │
+contrôle PNG 400 × 600
+      ├─ non conforme → dossiers de rejet
+      ▼
+encodage base64
+      │
+Hugging Face Inference API
+SegFormer B3 Clothes
+      │
+décodage + redimensionnement
+      │
+MaskPrediction/ + IMGConcat/
+      │
+Pixel Accuracy + IoU + Dice
+```
+
+Le mapping de classes couvre notamment chapeau, cheveux, haut, jupe, pantalon, robe, chaussures, visage, bras, jambes, sac et écharpe.
+
+## Déploiement
+
+Le prototype s'exécute dans Jupyter avec un token `FASHION_TREND_INTELLIGENCE_TOKEN_READ` stocké dans `.env`. Le modèle reste hébergé par Hugging Face; le dépôt ne déploie donc pas de GPU ni de serveur d'inférence.
+
+Cette architecture serverless convient à un test rapide et à faible volume. Une industrialisation devrait ajouter mise en file, retry, suivi de quota, version du modèle et comparaison de coût avec un endpoint dédié.
+
+## Impact
+
+Le notebook évalue 46 images et obtient en moyenne 98,87 % de Pixel Accuracy, 94,83 % d'IoU et 97,33 % de Dice. Les meilleures prédictions dépassent 0,98 de Dice; les cas les plus faibles restent identifiés individuellement, avec un minimum observé autour de 0,92 dans ce lot.
+
+Le prototype fournit donc une mesure concrète de faisabilité, ainsi que les masques et montages nécessaires à une revue visuelle. Il évite de décider sur quelques exemples choisis à la main.
+
+## Apprentissage
+
+J'ai appris à évaluer un service IA externe comme un composant que je ne contrôle pas : contrat de réponse, authentification, erreurs, quotas et coût font partie de la qualité de la solution.
+
+La comparaison des métriques m'a également montré pourquoi une valeur globale élevée doit être confrontée aux objets petits et aux cas difficiles. La visualisation par image reste indispensable pour interpréter IoU et Dice.

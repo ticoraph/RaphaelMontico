@@ -1,0 +1,61 @@
+---
+title: "Conduite d'un projet Data de bout en bout : mon portfolio d'AI Engineer"
+slug: "conduite-projet-data-portfolio-ai-engineer"
+tags: ["Gestion de projet Data", "Next.js", "FastAPI", "RAG", "pgvector", "AWS", "CI/CD", "Portfolio"]
+overview: "Conception et pilotage d'un portfolio bilingue devenu une application AI-native, avec recherche sémantique, assistant RAG et déploiement automatisé."
+---
+
+# Conduite de mon portfolio d'AI Engineer comme un projet Data
+
+## Contexte
+
+J'ai utilisé mon propre portfolio comme terrain de conduite de projet. Le besoin initial était professionnel — rendre mon parcours et mes réalisations lisibles — mais je voulais que le support démontre aussi mes compétences. Le site est donc devenu un produit bilingue qui associe contenu éditorial, frontend statique, backend FastAPI et recherche sémantique.
+
+Le projet relie les cinq dimensions travaillées chez OpenClassrooms : recueil du besoin, audit de l'existant, choix de solution, aide à la décision et pilotage de la qualité. Le dépôt actuel constitue la mise en œuvre concrète de cette démarche.
+
+## Problème
+
+Une simple liste de technologies ne prouve ni le niveau de maîtrise ni la capacité à relier un choix technique à un besoin. Il fallait organiser des projets hétérogènes, maintenir deux langues et permettre à un recruteur d'accéder rapidement à l'information pertinente.
+
+Le contenu devait rester la source de vérité, sans être dupliqué manuellement dans une base. Le frontend devait être rapide et peu coûteux à héberger, tandis que les fonctions IA nécessitaient un backend, un modèle d'embedding et un stockage vectoriel.
+
+## Solution
+
+J'ai structuré les expériences, diplômes et projets en MDX, avec le français comme source éditoriale. Un script détecte les pages modifiées par checksum et prépare leur traduction anglaise. À chaque évolution de contenu, un pipeline d'ingestion découpe les pages, calcule des embeddings Gemini et synchronise les chunks dans PostgreSQL avec pgvector.
+
+Le frontend Next.js exporté statiquement présente le portfolio. Le backend FastAPI expose une recherche par similarité et un chat RAG en streaming SSE, avec Gemini ou OpenAI comme fournisseur interchangeable. Cette architecture transforme le site en démonstration directement interrogeable plutôt qu'en catalogue figé.
+
+## Architecture
+
+```text
+Contenu MDX FR ── traduction contrôlée ── contenu EN
+      │
+      ├──────────────► Next.js statique
+      │                      │
+      │                 S3 + CloudFront
+      │
+      └─ chunking → embeddings → PostgreSQL/pgvector
+                                      ▲
+Utilisateur → FastAPI → recherche / chat RAG ─┘
+                    └─ Gemini ou OpenAI
+```
+
+La séparation frontend/backend garde le site consultable même si le service IA est indisponible. Le registre de checksums évite de retraduire inutilement toutes les pages et rend les écarts FR/EN visibles.
+
+## Déploiement
+
+Le frontend est conçu pour S3 et CloudFront. Le backend est déployable séparément sur AWS derrière API Gateway/App Runner, avec PostgreSQL/pgvector pour les embeddings. Les migrations Alembic versionnent le schéma de données.
+
+GitHub Actions exécute le lint et les tests, construit les deux applications, déploie le frontend et le backend, puis relance l'ingestion lorsque le contenu ou le pipeline change. Les variables de fournisseur permettent de changer de LLM sans modifier les routes du chat.
+
+## Impact
+
+Le portfolio ne se contente plus d'affirmer des compétences : son architecture en apporte une preuve observable. Un visiteur peut parcourir les pages en français ou en anglais, effectuer une recherche sémantique et interroger un assistant sur mon parcours.
+
+La chaîne éditoriale réduit aussi le coût de maintenance. Une modification MDX peut être détectée, traduite, reconstruite et réindexée par les workflows prévus, tout en gardant le frontend statique et indépendant de la base vectorielle.
+
+## Apprentissage
+
+Ce projet m'a appris à faire évoluer un livrable personnel comme un produit : partir des lecteurs, prioriser les parcours utiles, mesurer la cohérence et accepter une construction incrémentale. La carte des compétences n'a de valeur que si chaque affirmation renvoie à une réalisation vérifiable.
+
+Sur le plan technique, j'ai approfondi le découplage entre contenu, présentation et IA. Sur le plan projet, j'ai surtout appris à contrôler le périmètre : la richesse du backend ne doit jamais rendre le portfolio plus difficile à lire.

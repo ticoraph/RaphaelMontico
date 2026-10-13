@@ -1,0 +1,64 @@
+---
+title: "Multimodal ETL pipeline for fake news detection"
+slug: "pipeline-extraction-donnees-multimodales-fake-news"
+tags: ["Python", "Data Engineering", "ETL", "Apache Airflow", "PostgreSQL", "Streamlit", "Docker", "Fernet", "Web Scraping"]
+overview: "Airflow pipeline collecting text and images from four sources, encrypting their provenance, and loading them into PostgreSQL with a quality dashboard."
+---
+
+# Multimodal ETL Pipeline for Fake News Detection
+
+## Context
+
+For CheckItAI, I built the acquisition pipeline to feed future misinformation detection models. The data had to remain multimodal: each article needed to retain its text, image, source, and label.
+
+I worked with four complementary sources — Snopes, FreeNews API, Le Gorafi, and FakeNewsNet — covering fact-checking, news, satire, and public datasets.
+
+## Problem
+
+The sources do not offer the same format or access method. Some are accessed through an API, others through files or scraping. The labels `true`, `false`, and `satire` do not have the same meaning, and losing the link between text and image would make the data unusable for a future multimodal model.
+
+The pipeline also had to be rerunnable, observable, and secure. Provenance is necessary for auditing, but source URLs could not remain readable directly in the database.
+
+## Solution
+
+I developed a Python extractor for each source, followed by a shared transformation that cleans and normalizes the records. Provenance URLs are encrypted with Fernet before being loaded into PostgreSQL. An Airflow DAG chains together extraction, transformation/encryption, and loading.
+
+The Streamlit dashboard reads the results and displays four groups of KPIs: load accuracy rate, execution time, estimated compute cost, and volumes by source or label. It also provides a preview of the stored data to quickly check the association between content and image.
+
+## Architecture
+
+```text
+Snopes ───────┐
+FreeNews API ─┤
+Le Gorafi ────┼─ extracteurs Python
+FakeNewsNet ──┘          │
+                         ▼
+                 transformation commune
+                 + chiffrement Fernet
+                         │
+                  DAG Apache Airflow
+                         │
+                     PostgreSQL
+                         │
+                 dashboard Streamlit
+```
+
+The scripts remain modular: a new source can be added without rewriting the transformation or loading steps. The conceptual schema documents the entities and relationships before their technical implementation.
+
+## Deployment
+
+Docker Compose launches Airflow, PostgreSQL, and the dashboard. The Airflow interface is available on port 8080 and Streamlit on port 8501. Environment variables group the credentials, database configuration, and encryption key.
+
+The repository contains temporary data in JSON format, the DAG, extraction scripts, and exploration documentation. This local infrastructure reproduces the full cycle and provides the requested execution evidence without relying on manual actions in notebooks.
+
+## Impact
+
+The result is an ETL pipeline capable of automatically acquiring articles and their images, normalizing three types of labels, and retaining audited but encrypted provenance. The data is loaded into structured storage, ready for model training.
+
+KPIs are calculated on every run: they make it possible to detect an empty source, a drop in the load rate, an unusually long execution, or a change in cost. The dashboard makes these checks accessible without having to consult Airflow logs directly.
+
+## Lessons Learned
+
+I learned that the challenges of a fake news project begin before the model. It is necessary to distinguish factual errors, opinions, and satire, verify usage rights, and preserve the collection context.
+
+Airflow also taught me to design idempotent and observable tasks. A reliable pipeline must be able to resume, explain what it loaded, and report losses—not just work once on my machine.

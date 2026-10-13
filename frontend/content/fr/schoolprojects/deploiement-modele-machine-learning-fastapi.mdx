@@ -1,0 +1,64 @@
+---
+title: "Déploiement d'un modèle de Machine Learning avec FastAPI"
+slug: "deploiement-modele-machine-learning-fastapi"
+tags: ["Python", "FastAPI", "REST API", "PostgreSQL", "Supabase", "SQLAlchemy", "Pytest", "GitHub Actions", "XGBoost"]
+overview: "Transformation d'un classifieur d'attrition en API FastAPI authentifiée, testée et reliée à PostgreSQL pour tracer requêtes et prédictions."
+---
+
+# Déploiement d'un modèle de Machine Learning avec FastAPI
+
+## Contexte
+
+Avec `FuturisysPOC`, j'ai repris un modèle XGBoost de prédiction de démission pour le rendre accessible comme un vrai service. Le besoin n'était plus d'explorer les causes de l'attrition, mais d'encapsuler le modèle dans une interface stable que d'autres applications peuvent appeler.
+
+Le projet m'a placé dans une posture de Machine Learning Engineer : contrat d'API, authentification, validation, persistance des requêtes, tests et gestion des versions.
+
+## Problème
+
+Le classifieur avait été entraîné à partir de trois sources RH fusionnées et encodées. Pour l'utiliser hors notebook, il fallait garantir que les features reçues correspondent à celles attendues, renvoyer des erreurs claires et suivre ce qui arrive au modèle.
+
+Une API de prédiction traite par ailleurs des données sensibles. Même dans un POC, elle ne pouvait pas exposer librement le modèle ni incorporer les secrets de base de données dans le code.
+
+## Solution
+
+J'ai créé une application FastAPI avec trois routes principales : `/health` pour la disponibilité, `/model` pour les métadonnées du classifieur et `/predict` pour l'inférence. Les deux routes métier sont protégées par une clé transmise dans `X-API-Key`; Pydantic contrôle le corps de la requête.
+
+Le modèle XGBClassifier est chargé depuis un artefact Joblib. SQLAlchemy relie l'API à une base PostgreSQL hébergée sur Supabase. La table `requests` conserve les features, le statut HTTP et la date; `predictions` enregistre les inférences réussies avec résultat et latence; `dataset` accueille les données d'entraînement. Des scripts créent les tables, importent le dataset et exportent le schéma.
+
+## Architecture
+
+```text
+Client
+  │ X-API-Key + JSON
+  ▼
+FastAPI
+  ├─ validation Pydantic
+  ├─ modèle XGBoost Joblib
+  └─ SQLAlchemy
+         │
+         ▼
+PostgreSQL / Supabase
+  ├─ requests
+  ├─ predictions
+  └─ dataset
+```
+
+Les modules `src/model`, `src/db` et `src/test` isolent respectivement l'artefact ML, la persistance et la validation du service. Cette organisation évite de concentrer entraînement, API et accès aux données dans un seul fichier.
+
+## Déploiement
+
+L'application est exécutable sous Uvicorn avec Python 3.12. Toute la configuration — URL PostgreSQL, clé d'API, chemin du modèle, hôte et port — provient de variables d'environnement. Swagger fournit une documentation interactive sur `/docs`.
+
+Le workflow GitHub Actions exécute lint et tests lors d'un push sur la branche de développement, crée la proposition de fusion vers la branche principale puis produit un tag versionné. Le README documente Render comme cible adaptée, sans prétendre qu'un hébergement public permanent fait partie du dépôt.
+
+## Impact
+
+Le modèle devient utilisable par contrat HTTP plutôt que par import de notebook. Chaque appel est authentifié, validé et traçable en base; les prédictions réussies sont séparées des requêtes en erreur, ce qui facilite le diagnostic.
+
+Les tests Pytest et la couverture sécurisent les comportements essentiels avant création d'une version. Le schéma PostgreSQL et les scripts d'administration rendent également le POC transmissible à un autre développeur.
+
+## Apprentissage
+
+J'ai appris qu'industrialiser un modèle signifie surtout stabiliser ses interfaces : schéma d'entrée, réponses, erreurs, authentification et observabilité. La qualité du classifieur ne compense pas un contrat d'API ambigu.
+
+Ce projet m'a aussi familiarisé avec la séparation des secrets et de la configuration, l'ORM SQLAlchemy et la différence entre tester une fonction de prédiction et tester le comportement complet d'un endpoint.

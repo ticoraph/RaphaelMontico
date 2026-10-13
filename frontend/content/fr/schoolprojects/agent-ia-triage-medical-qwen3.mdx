@@ -1,0 +1,65 @@
+---
+title: "POC d'un agent IA de triage médical : fine-tuning SFT + DPO de Qwen3-1.7B"
+slug: "agent-ia-triage-medical-qwen3"
+tags: ["Python", "LLM", "QLoRA", "DPO", "Hugging Face", "vLLM", "FastAPI", "GCP Cloud Run", "Healthcare AI", "RGPD"]
+overview: "Spécialisation, alignement, évaluation et déploiement GPU d'un Qwen3-1.7B bilingue pour assister le triage aux urgences, avec anonymisation et traçabilité."
+---
+
+# Agent IA de triage médical avec Qwen3-1.7B
+
+## Contexte
+
+Pendant une mission de quatre semaines pour le Centre Hospitalier Saint-Aurélien, j'ai développé un POC d'assistant conversationnel destiné au personnel des urgences. Son rôle est de recueillir des symptômes, des antécédents et des constantes, puis de proposer une priorité — maximale, modérée ou différée — accompagnée d'une justification.
+
+Le projet couvre toute la chaîne : préparation d'un corpus médical bilingue, anonymisation, fine-tuning supervisé, alignement par préférences, évaluation, API d'inférence et déploiement GPU. Il s'agit d'une aide à la décision expérimentale, jamais d'un remplacement du jugement clinique.
+
+## Problème
+
+Un modèle généraliste compact ne suit pas spontanément le format de triage attendu et peut produire une recommandation dangereusement affirmative. Les données médicales posent en plus des contraintes fortes de confidentialité, de traçabilité et de reproductibilité.
+
+Je devais donc concilier plusieurs objectifs : spécialiser un modèle de 1,7 milliard de paramètres avec des moyens GPU limités, préserver le français et l'anglais, préférer les réponses cliniquement prudentes, mesurer les erreurs de sécurité et servir le modèle avec une latence compatible avec un POC interactif.
+
+## Solution
+
+J'ai préparé quatre sources Hugging Face, ajouté des champs de triage structurés et anonymisé les exemples avec Presidio et des modèles spaCy français et anglais. Une liste blanche d'environ 239 000 termes médicaux réduit les faux positifs de l'anonymisation. Les données sont séparées en jeux d'entraînement, validation, test et évaluation clinique.
+
+Le modèle `Qwen3-1.7B-Base` est d'abord spécialisé par SFT avec QLoRA 4 bits (`r=64`, `alpha=128`, trois époques), puis aligné par DPO sur 2 000 paires de préférences bilingues. J'ai retenu une loss IPO afin de limiter le biais lié à la longueur différente des réponses choisies et rejetées. L'évaluation combine perplexité, BERTScore, reward margin, préférence de la bonne paire et contrôles de sécurité.
+
+## Architecture
+
+```text
+Datasets médicaux FR/EN
+          │
+   Presidio + spaCy
+          │
+ SFT QLoRA → DPO/IPO
+          │
+  Adapter LoRA privé
+          │
+ FastAPI + vLLM
+   ├─ priorité normalisée
+   ├─ drapeaux de sécurité
+   └─ journal d'audit JSONL
+          │
+      Gradio
+```
+
+Le service détecte la langue, reconstruit le prompt ChatML utilisé à l'entraînement et charge l'adapter DPO à la volée avec `LoRARequest`. Un moteur factice permet de tester localement l'API sans GPU.
+
+## Déploiement
+
+J'ai déployé deux services dans `us-central1` sur GCP Cloud Run : `triage-api` sur GPU NVIDIA L4 pour FastAPI et vLLM, et `triage-gradio` sur CPU pour l'interface. Les images sont construites par Cloud Build puis déployées par GitHub Actions avec Workload Identity Federation.
+
+Les secrets Hugging Face et la clé de l'API sont stockés dans Secret Manager. L'endpoint `/triage` exige `X-API-Key`; `/health`, `/model` et `/docs` facilitent l'exploitation. L'image GPU reste également exécutable sur RunPod, tandis que Docker Compose fournit un mode local mocké.
+
+## Impact
+
+Le dépôt livre un POC réellement servi, pas seulement un notebook : modèle SFT+DPO, endpoint bilingue, interface Gradio, CI/CD, journal d'audit et suites de tests. Les tests live couvrent latence, robustesse, pertinence et plusieurs centaines de cas d'évaluation clinique; les tests unitaires utilisent un moteur mocké et restent exécutables en CI sans GPU.
+
+J'ai volontairement séparé réussite technique et validation médicale. Le système démontre qu'un petit modèle peut être spécialisé et industrialisé, mais ses réponses restent soumises aux hallucinations et les règles de sécurité sont heuristiques. Cette limite est exposée dans l'API et la documentation plutôt que masquée par une métrique globale.
+
+## Apprentissage
+
+J'ai appris à maintenir la parité entre données, format de prompt, entraînement et inférence : une divergence minime entre ces étapes peut annuler le bénéfice du fine-tuning. Le projet m'a aussi montré que le travail le plus sensible se situe souvent autour du modèle — anonymisation, constitution des splits, audit, secrets et scénarios de sécurité.
+
+Enfin, j'ai acquis une expérience concrète du serving GPU : compatibilité CUDA de l'image vLLM, hot-loading LoRA, déploiement Cloud Run L4 et stratégie de tests sans GPU pour garder une CI rapide.

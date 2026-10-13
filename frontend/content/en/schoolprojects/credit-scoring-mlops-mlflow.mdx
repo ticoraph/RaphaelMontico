@@ -1,0 +1,66 @@
+---
+title: "Business-Cost-Oriented Credit Scoring with MLflow"
+slug: "credit-scoring-mlops-mlflow"
+tags: ["Python", "Machine Learning", "MLOps", "MLflow", "LightGBM", "XGBoost", "Scikit-learn", "Credit Scoring", "Optuna", "SMOTE"]
+overview: "Credit scoring pipeline that aggregates Home Credit data, compares multiple classifiers, and optimizes the decision threshold based on a business cost tracked in MLflow."
+---
+
+# Cost-Oriented Credit Scoring with MLflow
+
+## Context
+
+I developed this project to simulate the work of a credit company that needs to estimate default risk using the Home Credit dataset. The repository covers the preparation of several relational tables, model training, hyperparameter optimization, and experiment tracking.
+
+My goal was not simply to achieve a good ROC-AUC. I wanted to link the model’s decision to its financial impact and preserve enough records to compare each experiment fairly.
+
+## Problem
+
+Customer information is spread across current applications, past loans, installments, cards, and payments. The target is heavily imbalanced: a model can report good accuracy while failing to detect defaults.
+
+The standard threshold of 0.5 is also problematic. A false negative—granting credit to a customer who will default—does not cost the same as a false positive—rejecting a creditworthy customer. Model selection therefore had to account for this asymmetric cost.
+
+## Solution
+
+I built an initial notebook that aggregates the `bureau`, `previous_application`, `POS_CASH_balance`, `installments_payments`, and `credit_card_balance` tables, encodes the categories, and then produces a single customer-level dataset. The canonical pipeline in `main.py` then splits the data in a stratified manner, imputes missing values, and standardizes only the models that require it.
+
+I compared logistic regression, Random Forest, XGBoost, LightGBM, and MLP. Hyperparameters can be searched using GridSearchCV, RandomizedSearchCV, or Optuna. Imbalance is handled using class weighting or SMOTE, applied after the split to prevent data leakage. Finally, a function iterates through thresholds and calculates the cost of false positives and false negatives.
+
+## Architecture
+
+```text
+7 Home Credit tables
+        │
+aggregations + joins + encoding
+        │
+customer dataset / TARGET
+        │
+stratified split + imputation
+        │
+LR │ RF │ XGBoost │ LightGBM │ MLP
+        │
+GridSearch / RandomizedSearch / Optuna
+        │
+metrics + business cost by threshold
+        │
+MLflow: parameters, models, curves, feature importances
+```
+
+MLflow centralizes parameters, metrics, artifacts, and models. The repository also records confusion matrices, Precision-Recall curves, and global or local feature importances.
+
+## Deployment
+
+This repository covers the experimentation and model selection stage. MLflow uses a SQLite backend and a local artifact directory; its interface makes it possible to compare runs. A dedicated command then exports a tracked model to `model.pkl` to prepare it for integration into a service.
+
+Reproducibility relies on a canonical script, parameters grouped at the top of the file, and experiments named according to whether SMOTE is used. The API and monitoring are covered in the following MLOps project rather than being mixed into this modeling repository.
+
+## Impact
+
+The pipeline provides a consistent comparison of five model families and three optimization strategies. Most importantly, for each threshold it reports recall, precision, and estimated financial cost, then logs the threshold that maximizes business performance in MLflow.
+
+This approach makes the recommendation defensible: the best statistical model is not automatically the one that best protects the company’s margins. The repository also produces a versionable artifact, ready to be consumed by a scoring API.
+
+## Learning
+
+I learned to treat the classification threshold as a business parameter, not as a constant imposed by the library. This shift changes the conversation: instead of choosing only between ROC-AUC and F1, we measure the cost of errors.
+
+MLflow also showed me the value of structured experimentation. Without a history of data, parameters, and artifacts, an apparent improvement is difficult to reproduce or explain.

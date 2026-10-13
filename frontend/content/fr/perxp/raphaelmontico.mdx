@@ -1,0 +1,36 @@
+---
+title: "RaphaelMontico.fr"
+slug: "raphaelmontico"
+order: 1
+tags: ["Next.js", "FastAPI", "PostgreSQL", "pgvector", "RAG", "Gemini", "OpenAI", "Langfuse", "AWS S3", "CloudFront", "App Runner"]
+overview: "Portfolio personnel AI-native indexé pour un chatbot RAG capable de répondre à des questions sur mon parcours et mes projets."
+---
+
+[RaphaelMontico.fr](https://raphaelmontico.fr) est mon portfolio personnel, pensé comme un projet "AI-native" : au-delà de la présentation classique de mon parcours et de mes projets, tout le contenu du site (pages, expériences, projets) est indexé pour être interrogé via un chatbot RAG (Retrieval Augmented Generation).
+
+Ce site me sert à la fois de vitrine et de terrain d'expérimentation pour mettre en pratique une architecture IA de bout en bout : ingestion de contenu, recherche sémantique, génération augmentée par la recherche, et déploiement cloud d'un système découplé frontend / backend IA.
+
+# Fonctionnalités
+
+- Portfolio bilingue (FR/EN) présentant mon parcours, mes expériences professionnelles et mes projets personnels
+- Backend d'assistant IA (RAG) capable de répondre en langage naturel à des questions sur mon profil, mes projets et mes choix techniques, en s'appuyant sur le contenu réel du site (réponses en streaming) — intégration de l'interface de chat en cours de finalisation côté frontend
+- API de recherche sémantique sur l'ensemble du contenu (pages, expériences, projets), au-delà d'une simple recherche par mot-clé
+- Génération des réponses via un modèle de langage OpenAI
+- Traçabilité (observabilité) complète du pipeline RAG avec Langfuse : traces de bout en bout depuis la requête utilisateur jusqu'à la réponse streamée, suivi des coûts et des latences
+
+# Architecture & technologies
+
+- **Frontend** : Next.js (App Router), TypeScript, Tailwind CSS 4, next-intl (i18n), contenu en MDX (`gray-matter` + `next-mdx-remote`), export statique
+- **Backend** : FastAPI, SQLAlchemy async + asyncpg, Alembic
+- **Base de données** : PostgreSQL + pgvector pour le stockage des embeddings
+- **IA** : embeddings Gemini, LLM OpenAI, réponses en streaming (SSE)
+- **Observabilité** : Langfuse (SDK v4, basé sur OpenTelemetry) pour la traçabilité des appels LLM et du pipeline RAG
+- **Infrastructure** : frontend statique sur S3 + CloudFront, backend conteneurisé sur AWS (API Gateway/App Runner), pipeline d'ingestion et CI/CD via GitHub Actions
+
+# Points clés
+
+- Conception d'une architecture découplée : le frontend reste 100 % statique, toute la logique IA (retrieval, appel LLM, embeddings) vivant dans un backend déployé séparément
+- Mise en place d'un pipeline d'ingestion dédié transformant le contenu MDX du site en chunks puis en embeddings stockés dans pgvector
+- Implémentation d'une interface d'abstraction des fournisseurs de LLM permettant de changer de modèle sans impacter le reste du système
+- Mise en place d'un pipeline CI/CD complet (lint, tests, build, déploiement frontend/backend, relance de l'ingestion sur changement de contenu)
+- Intégration de Langfuse pour tracer l'ensemble du pipeline RAG, y compris la propagation du contexte de trace OpenTelemetry à travers les réponses en streaming (un point délicat traité spécifiquement pour ne pas casser l'arborescence des traces)

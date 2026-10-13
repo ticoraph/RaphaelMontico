@@ -1,0 +1,40 @@
+---
+title: "PulpFiction.fr"
+slug: "pulpfiction"
+order: 3
+tags: ["React", "TypeScript", "FastAPI", "PostgreSQL", "AWS Cognito", "AWS S3", "CloudFront", "App Runner", "Tailwind CSS", "Llama 3.1", "RAG", "vLLM"]
+overview: "Full-stack web application showcasing a Pulp Fiction collection, including an AI chatbot to chat with the movie characters."
+---
+
+[Pulpfiction.fr](https://pulpfiction.fr) is a full-stack web application, designed to showcase and manage the world's largest collection of Pulp Fiction collectibles, with an emphasis on affiliate links. It also integrates an AI chatbot allowing users to chat with the film's iconic characters (Jules, Vincent, Mia, Marsellus, Butch, Winston Wolf).
+
+This project allowed me to implement, end-to-end, the design, development, and deployment of a production-ready cloud-native application: from database architecture to setting up the continuous deployment pipeline, including access and authentication management, as well as the integration of a fine-tuned generative AI model.
+
+# Features
+
+- **AI Chatbot** : chat with the film's characters (Llama 3.1 8B fine-tuned, RAG for factual accuracy)
+- Responsive public collection gallery
+- Authentication and account management (AWS Cognito)
+- Admin area with full rights: creation, modification, deletion, and reordering of items, management of their visibility
+- Secure REST API, with server-side verification of access tokens
+
+# Architecture & Technologies
+
+- **AI & Model** : Llama 3.1 8B Instruct (QLoRA fine-tuning), RAG (pgvector)
+- **AI Inference** : vLLM on serverless Modal infrastructure (scale-to-zero)
+- **Frontend** : React 18, TypeScript, Tailwind CSS, React Router, Vite
+- **Backend** : FastAPI, SQLAlchemy
+- **Database** : PostgreSQL (AWS RDS) with pgvector extension
+- **Authentication** : AWS Cognito via AWS Amplify
+- **Hosting** : frontend on S3 + CloudFront, containerized backend (Docker) on AWS App Runner via ECR
+- **CI/CD** : automated deployment via GitHub Actions
+
+# Key Highlights
+
+- Complete AI pipeline: custom dataset creation (original script parsing, translation), cloud fine-tuning (AWS SageMaker / GCP Vertex AI) and evaluation
+- Integration of a high-performance RAG chatbot with FastAPI and a vector database (pgvector)
+- Serverless and scale-to-zero deployment of LLM inference on Modal, optimizing costs
+- Complete design and implementation of the FastAPI backend, including JWT Cognito token verification (JWKS) and clear separation between public read and authenticated write operations
+- Database modeling (collectibles, user roles) and display order management
+- Setup of a complete AWS infrastructure (S3, CloudFront, RDS, Cognito, App Runner, ECR) with an automated build and deployment pipeline
+- Focus on accessibility, performance (code splitting, optimized images) and mobile compatibility

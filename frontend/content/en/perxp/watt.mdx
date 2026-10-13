@@ -1,0 +1,39 @@
+---
+title: "Watt"
+slug: "watt"
+order: 2
+tags: ["React", "TypeScript", "FastAPI", "SQLAlchemy", "SQLite", "MLflow", "XGBoost", "Google Cloud Run", "Firebase Hosting"]
+overview: "Full-stack platform for monitoring and forecasting domestic electricity consumption, with multi-source data pipeline and machine learning models."
+---
+
+**Watt** is a full-stack web application developed to import, visualize, and forecast domestic energy consumption: daily import of consumption, index, and peak power data, visualization of trends, and forecasting of future consumption using machine learning.
+
+This project covers the entire chain: data aggregation from multiple heterogeneous sources (electricity provider, solar panels, electric vehicle, home sensors, weather, water), secure backend API, training and monitoring of predictive models, and automated cloud deployment.
+
+# Features
+
+- Dashboard with key indicators (total/average consumption, peak power) and monthly consumption graph
+- Detail pages by source: EcoFlow (solar/battery), Enedis (meter index, peak power), Tesla (vehicle charging), Climate (temperature/precipitation), Cost
+- Feature Engineering: client-side Pearson correlation matrix and server-side calculated variable importance graph (XGBoost)
+- Predictions: backtest comparison between models (Chronos2, TimesFM, XGBoost, Prophet, seasonal average) with MAE/RMSE/bias/MAPE metrics, and production forecast with p10/p90 uncertainty bands
+- LLM Analysis: report generated locally by a Qwen3-4B model, comparing backtests and explaining anomalies in French
+- Raw SQLite database viewer
+- Google Authentication (Firebase Auth) with server-side verified email whitelist
+
+# Architecture & Technologies
+
+- **Frontend** : React, Vite, TypeScript, Tailwind CSS, React Query, Recharts
+- **Backend** : FastAPI, SQLAlchemy 2.0, SQLite
+- **Machine learning** : MLflow (model tracking and registry), XGBoost, TimesFM, Chronos2, Prophet
+- **Local LLM** : Qwen3-4B (GGUF) via llama-cpp-python
+- **Authentication** : Firebase Auth (Google Sign-In)
+- **Infrastructure** : Google Cloud Run, Artifact Registry, Cloud SQL, Firebase Hosting, Terraform
+- **CI/CD** : GitHub Actions (build/test + deployment via Workload Identity Federation, without JSON key)
+
+# Key Points
+
+- Design of a multi-source data pipeline (Enedis, EcoFlow, Tesla, Aqara, water meter reading, weather) from raw scraping/import to a unique, cleaned, and enriched dataset, ready for training
+- Advanced feature engineering (solar yield per hour of sunshine, residuals vs trend, thermal amplitude) feeding a correlation matrix and an XGBoost variable importance model
+- Training, monitoring, and comparison of several time series forecasting models (XGBoost, TimesFM, Chronos2, Prophet) via an MLflow server deployed in production
+- Generation of analysis reports in French by a locally executed LLM, integrated as read-only in the application
+- Implementation of a complete cloud infrastructure (Cloud Run for the API and MLflow server, Firebase Hosting for the frontend) with automated continuous deployment and static keyless authentication

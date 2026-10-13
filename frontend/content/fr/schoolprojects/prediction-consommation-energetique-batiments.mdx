@@ -1,0 +1,64 @@
+---
+title: "Prédiction de la consommation énergétique des bâtiments"
+slug: "prediction-consommation-energetique-batiments"
+tags: ["Python", "Machine Learning", "Scikit-learn", "Pandas", "EDA", "Feature Engineering", "Régression", "Random Forest", "GridSearchCV"]
+overview: "Pipeline de régression sur les bâtiments non résidentiels de Seattle pour estimer consommation et émissions avant audit énergétique."
+---
+
+# Prédiction énergétique des bâtiments de Seattle
+
+## Contexte
+
+J'ai travaillé sur les données ouvertes du programme Seattle Building Energy Benchmarking. La ville souhaitait mieux cibler les bâtiments non résidentiels à auditer, sans devoir mesurer au préalable la consommation de chacun.
+
+Le projet vise deux grandeurs : `SiteEnergyUse(kBtu)`, la consommation énergétique sur site, et `TotalGHGEmissions`, les émissions totales de gaz à effet de serre. Les prédictions utilisent uniquement des caractéristiques disponibles avant un audit : surface, âge, quartier, nombre d'étages et usages du bâtiment.
+
+## Problème
+
+Le dataset brut mélange types de bâtiments, unités, valeurs incohérentes, données manquantes et outliers. Plusieurs variables décrivent presque la même information, tandis que les usages d'un bâtiment forment une catégorie multiple difficile à encoder.
+
+Le faible nombre de bâtiments et l'hétérogénéité des usages rendent aussi le surapprentissage probable. Il fallait comparer les performances hors entraînement et ne pas confondre un excellent score train avec une bonne généralisation.
+
+## Solution
+
+J'ai construit trois notebooks séquentiels. Le premier filtre les bâtiments non résidentiels, nettoie les valeurs erronées, retire les variables redondantes et analyse les cibles. Le second crée l'âge du bâtiment, les indicateurs de parking et d'énergies utilisées, la surface moyenne, puis encode quartier, type de propriété et usages multiples.
+
+Le troisième compare `DummyRegressor`, régression linéaire, SVR et Random Forest avec une validation croisée à dix plis. J'ai suivi R², MAE, RMSE et MAPE, puis optimisé le Random Forest par GridSearchCV et interprété les variables avec l'importance par permutation.
+
+## Architecture
+
+```text
+seatle.csv
+    │
+filtrage + nettoyage + EDA
+    │
+seatle_after_analyze.csv
+    │
+feature engineering + encodages
+    │
+seatle_after_feature_engineering.csv
+    │
+baseline │ linéaire │ SVR │ Random Forest
+    │
+CV 10 plis + GridSearch + permutation importance
+```
+
+Chaque notebook consomme explicitement le CSV produit par le précédent. Cette dépendance rend le pipeline lisible, mais impose aussi de vérifier les notebooks aval lorsqu'une colonne change.
+
+## Déploiement
+
+Le livrable est une analyse reproductible dans JupyterLab, pas une application en production. L'environnement se crée avec `requirements.txt`; la validation consiste à exécuter les notebooks dans l'ordre et à contrôler les CSV et visualisations produits.
+
+Il n'y a volontairement ni API ni tests automatisés dans ce dépôt historique. La prochaine étape d'industrialisation serait de transformer les préparations en pipeline Scikit-learn versionné avant de servir le modèle.
+
+## Impact
+
+Le Random Forest surpasse la régression linéaire : son R² test atteint environ 0,58, contre environ 0,54 en validation croisée pour la régression. Après recherche, les meilleurs paramètres sont `n_estimators=300`, `max_depth=9` et `min_samples_split=5`, pour un R² test d'environ 51,8 %.
+
+L'écart important entre scores d'entraînement et de test montre toutefois une généralisation limitée. Le résultat est donc utile pour prioriser ou présélectionner des audits, mais insuffisant pour remplacer une mesure énergétique réelle.
+
+## Apprentissage
+
+J'ai appris à construire des variables à partir du fonctionnement métier d'un bâtiment plutôt qu'à injecter toutes les colonnes disponibles. L'âge, la surface et le mix d'usages donnent au modèle des signaux plus interprétables.
+
+Ce projet m'a aussi appris à communiquer une performance imparfaite. Identifier le surapprentissage et limiter l'usage recommandé du modèle est plus professionnel que de ne montrer que son meilleur R².

@@ -1,0 +1,64 @@
+---
+title: "Pipeline ETL multimodal pour la détection de fake news"
+slug: "pipeline-extraction-donnees-multimodales-fake-news"
+tags: ["Python", "Data Engineering", "ETL", "Apache Airflow", "PostgreSQL", "Streamlit", "Docker", "Fernet", "Web Scraping"]
+overview: "Pipeline Airflow collectant texte et images depuis quatre sources, chiffrant leur provenance et chargeant PostgreSQL avec un dashboard de qualité."
+---
+
+# Pipeline ETL multimodal pour la détection de fake news
+
+## Contexte
+
+Pour CheckItAI, j'ai construit la chaîne d'acquisition destinée à alimenter de futurs modèles de détection de désinformation. Les données devaient rester multimodales : chaque article devait conserver son texte, son image, sa source et son label.
+
+J'ai travaillé sur quatre canaux complémentaires — Snopes, FreeNews API, Le Gorafi et FakeNewsNet — couvrant fact-checking, actualité, satire et datasets publics.
+
+## Problème
+
+Les sources n'offrent ni le même format ni le même mode d'accès. Certaines passent par une API, d'autres par des fichiers ou du scraping. Les labels `true`, `false` et `satire` n'ont pas la même signification, et perdre le lien texte-image rendrait les données inutilisables pour un futur modèle multimodal.
+
+Le pipeline devait en plus être relançable, observable et sécurisé. La provenance est nécessaire pour l'audit, mais les URL sources ne devaient pas rester lisibles directement en base.
+
+## Solution
+
+J'ai développé un extracteur Python par source, puis une transformation commune qui nettoie et normalise les enregistrements. Les URL de provenance sont chiffrées avec Fernet avant le chargement dans PostgreSQL. Un DAG Airflow enchaîne extraction, transformation/chiffrement et chargement.
+
+Le dashboard Streamlit lit les résultats et expose quatre familles de KPI : taux de précision du chargement, durée d'exécution, coût compute estimé et volumes par source ou label. Il propose aussi un aperçu des données stockées pour contrôler rapidement l'association entre contenu et image.
+
+## Architecture
+
+```text
+Snopes ───────┐
+FreeNews API ─┤
+Le Gorafi ────┼─ extracteurs Python
+FakeNewsNet ──┘          │
+                         ▼
+                 transformation commune
+                 + chiffrement Fernet
+                         │
+                  DAG Apache Airflow
+                         │
+                     PostgreSQL
+                         │
+                 dashboard Streamlit
+```
+
+Les scripts restent modulaires : une nouvelle source peut être ajoutée sans réécrire la transformation ou le chargement. Le schéma conceptuel documente les entités et les relations avant leur traduction technique.
+
+## Déploiement
+
+Docker Compose lance Airflow, PostgreSQL et le dashboard. L'interface Airflow est disponible sur le port 8080 et Streamlit sur 8501. Les variables d'environnement regroupent les identifiants, la configuration de base et la clé de chiffrement.
+
+Le dépôt contient les données temporaires au format JSON, le DAG, les scripts d'extraction et la documentation d'exploration. Cette infrastructure locale reproduit le cycle complet et fournit les preuves d'exécution demandées, sans dépendre d'actions manuelles dans les notebooks.
+
+## Impact
+
+Le résultat est une chaîne ETL capable d'acquérir automatiquement des articles et leurs images, de normaliser trois types de labels et de conserver une provenance auditée mais chiffrée. Les données arrivent dans un stockage structuré prêt pour l'entraînement de modèles.
+
+Les KPI sont calculés à chaque run : ils permettent de repérer une source vide, une chute du taux de chargement, une exécution anormalement longue ou une évolution de coût. Le dashboard rend ces contrôles accessibles sans consulter directement les logs Airflow.
+
+## Apprentissage
+
+J'ai appris que la difficulté d'un projet de fake news commence avant le modèle. Il faut distinguer erreur factuelle, opinion et satire, vérifier les droits d'usage et préserver le contexte de collecte.
+
+Airflow m'a aussi appris à concevoir des tâches idempotentes et observables. Un pipeline fiable doit pouvoir reprendre, expliquer ce qu'il a chargé et signaler ses pertes, pas seulement fonctionner une fois sur ma machine.

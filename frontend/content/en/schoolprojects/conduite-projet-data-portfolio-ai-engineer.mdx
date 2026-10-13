@@ -1,0 +1,61 @@
+---
+title: "End-to-End Data Project Delivery: My AI Engineer Portfolio"
+slug: "conduite-projet-data-portfolio-ai-engineer"
+tags: ["Gestion de projet Data", "Next.js", "FastAPI", "RAG", "pgvector", "AWS", "CI/CD", "Portfolio"]
+overview: "Design and management of a bilingual portfolio turned into an AI-native application, featuring semantic search, a RAG assistant, and automated deployment."
+---
+
+# Managing My AI Engineer Portfolio as a Data Project
+
+## Context
+
+I used my own portfolio as a project management testbed. The initial need was professional—to make my background and achievements easy to understand—but I also wanted the site to demonstrate my skills. The site therefore became a bilingual product combining editorial content, a static frontend, a FastAPI backend, and semantic search.
+
+The project brings together the five areas covered at OpenClassrooms: requirements gathering, assessment of the existing solution, solution selection, decision support, and quality management. The current repository is the practical implementation of this approach.
+
+## Problem
+
+A simple list of technologies proves neither proficiency nor the ability to connect a technical choice to a need. I needed to organize diverse projects, maintain two languages, and enable recruiters to quickly find relevant information.
+
+The content had to remain the source of truth, without being manually duplicated in a database. The frontend had to be fast and inexpensive to host, while the AI features required a backend, an embedding model, and vector storage.
+
+## Solution
+
+I structured my experience, diplomas, and projects in MDX, with French as the editorial source. A script detects pages modified by checksum and prepares their English translations. Whenever the content changes, an ingestion pipeline splits the pages into chunks, computes Gemini embeddings, and syncs the chunks to PostgreSQL with pgvector.
+
+The statically exported Next.js frontend presents the portfolio. The FastAPI backend provides similarity search and an SSE streaming RAG chat, with Gemini or OpenAI as interchangeable providers. This architecture turns the site into an interactive demonstration rather than a static catalog.
+
+## Architecture
+
+```text
+French MDX content ── controlled translation ── English content
+      │
+      ├──────────────► Static Next.js
+      │                      │
+      │                 S3 + CloudFront
+      │
+      └─ chunking → embeddings → PostgreSQL/pgvector
+                                      ▲
+User → FastAPI → search / RAG chat ──┘
+                    └─ Gemini or OpenAI
+```
+
+Separating the frontend and backend keeps the site accessible even if the AI service is unavailable. The checksum registry avoids unnecessarily retranslating every page and makes French/English discrepancies visible.
+
+## Deployment
+
+The frontend is designed for S3 and CloudFront. The backend can be deployed separately on AWS behind API Gateway/App Runner, with PostgreSQL/pgvector for embeddings. Alembic migrations version the data schema.
+
+GitHub Actions runs linting and tests, builds both applications, deploys the frontend and backend, then reruns ingestion when the content or pipeline changes. Provider variables make it possible to switch LLMs without modifying the chat routes.
+
+## Impact
+
+The portfolio no longer just claims to demonstrate skills: its architecture provides observable proof. Visitors can browse the pages in French or English, perform semantic searches, and ask an assistant about my background.
+
+The editorial workflow also reduces maintenance costs. An MDX change can be detected, translated, rebuilt, and reindexed through the planned workflows, while keeping the frontend static and independent of the vector database.
+
+## Learning
+
+This project taught me to evolve a personal deliverable as a product: start with the readers, prioritize useful user journeys, measure consistency, and embrace iterative development. A skills map is only valuable if every claim points to a verifiable achievement.
+
+Technically, I deepened my understanding of decoupling content, presentation, and AI. From a project perspective, I mainly learned to control scope: a sophisticated backend must never make the portfolio harder to read.

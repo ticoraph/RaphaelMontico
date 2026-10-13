@@ -1,0 +1,62 @@
+---
+title: "Entraînement d'agents RL pour le pilotage d'un atterrisseur lunaire"
+slug: "entrainement-agent-rl-lunar-lander"
+tags: ["Python", "Reinforcement Learning", "PyTorch", "Stable-Baselines3", "Gymnasium", "DQN", "PPO", "FastAPI", "Gradio"]
+overview: "Parcours expérimental du contrôle aléatoire au PPO optimisé, puis exposition d'un agent LunarLander dans une API avec vidéos et télémétrie."
+---
+
+# Entraînement d'agents RL pour un atterrisseur lunaire
+
+## Contexte
+
+J'ai construit `AstroDynamics` pour apprendre le Reinforcement Learning par étapes, puis transformer l'expérience finale en système démontrable. Le fil conducteur part de CartPole, passe par l'implémentation d'un DQN et aboutit au pilotage autonome de `LunarLander-v3` avec PPO.
+
+Le dépôt ne contient donc pas uniquement un modèle final : il conserve les exercices qui montrent comment j'ai compris les espaces d'observation et d'action, les récompenses, l'exploration et le tuning.
+
+## Problème
+
+En RL, un entraînement peut sembler réussi grâce à quelques épisodes favorables alors que la politique reste instable. Les performances dépendent fortement du choix de l'algorithme, des hyperparamètres et du protocole d'évaluation.
+
+Il fallait également rendre l'agent observable. Une récompense moyenne ne permet pas à elle seule de comprendre un atterrissage, l'usage du carburant ou la trajectoire suivie.
+
+## Solution
+
+J'ai commencé avec une politique aléatoire sur `CartPole-v1`, puis implémenté un DQN en PyTorch pour manipuler directement replay buffer, réseau cible et mise à jour des Q-values. Pour LunarLander, j'ai utilisé PPO avec Stable-Baselines3 et conduit plusieurs expériences d'hyperparamètres suivies dans TensorBoard.
+
+Le modèle retenu, `ppo_lunar_lander_XP2.zip`, est chargé par un backend FastAPI. Une route lance une mission et génère sa vidéo; d'autres consultent l'historique et la télémétrie ou effacent les essais. Deux interfaces Gradio séparent le centre de pilotage du tableau de bord analytique.
+
+## Architecture
+
+```text
+Gymnasium
+  ├─ CartPole : baseline → DQN PyTorch
+  └─ LunarLander : PPO + tuning
+                   │
+              modèle .zip
+                   │
+                FastAPI
+       ┌───────────┴───────────┐
+       ▼                       ▼
+Gradio mission            Gradio dashboard
+vidéo + télémétrie        historique + statistiques
+```
+
+Les logs TensorBoard documentent l'évolution des récompenses. L'API conserve les missions afin que l'interface analytique puisse comparer les trajectoires après l'inférence.
+
+## Déploiement
+
+Le système se lance en trois processus locaux : FastAPI sur le port 8000, l'interface de mission sur 7860 et le dashboard Gradio séparément. Les dépendances incluent Gymnasium, Stable-Baselines3, PyTorch, ImageIO/FFmpeg et Matplotlib.
+
+Cette livraison vise la démonstration reproductible plutôt qu'un service cloud permanent. Le modèle est versionné comme artefact dans `models/`; les interfaces consomment l'API au lieu de réimplémenter la politique côté frontend.
+
+## Impact
+
+L'agent sélectionné atteint une récompense moyenne d'environ 221 points, au-dessus du seuil de réussite de 200, avec un atterrissage contrôlé entre les drapeaux et une utilisation du moteur optimisée. La vidéo rend le comportement vérifiable au-delà de la métrique agrégée.
+
+Le projet fournit aussi un parcours pédagogique complet : chaque étape peut être rejouée indépendamment, tandis que l'API et les dashboards rendent le meilleur agent accessible sans ouvrir le code d'entraînement.
+
+## Apprentissage
+
+J'ai appris à séparer entraînement et évaluation et à juger une politique sur plusieurs épisodes, avec moyenne et dispersion. Le tuning isolé d'un paramètre à la fois m'a permis de comprendre ses effets au lieu de chercher un score par essais opaques.
+
+L'implémentation manuelle du DQN a rendu concrètes les abstractions offertes ensuite par Stable-Baselines3. Enfin, l'ajout des vidéos et de la télémétrie m'a montré que l'observabilité d'un agent est indispensable pour interpréter une récompense.

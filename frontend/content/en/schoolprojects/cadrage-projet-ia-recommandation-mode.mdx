@@ -1,0 +1,67 @@
+---
+title: "Strategic Scoping of an AI-Powered Clothing Recommendation Project"
+slug: "cadrage-projet-ia-recommandation-mode"
+tags: ["Cadrage IA", "Computer Vision", "System Design", "Azure", "ROI", "RGPD", "Product Management"]
+overview: "Scoping document turning a photo-based clothing recommendation idea into a quantified, scheduled POC that can be presented to an executive committee."
+---
+
+# Scoping a photo-based clothing recommendation application
+
+## Context
+
+I approached this project as a scoping engagement ahead of development. The sponsor wanted to let users photograph a garment and find similar items in a catalog. My role was to turn this product vision into a realistic AI proposal, with a POC scope, target architecture, team, budget, and decision criteria.
+
+The main deliverable is a document for an executive committee bringing together product, data, and compliance stakeholders. It therefore needed to make the technical choices understandable without reducing the subject to a simple model demonstration.
+
+## Problem
+
+The initial request did not specify the expected level of similarity, traffic volume, or constraints on user photos. Two solution families were possible: generate visual embeddings to search for similar items, or delegate the analysis to a multimodal LLM.
+
+The scoping work had to quickly balance value, cost, and risk. It also needed to anticipate personal data visible in photos, hosting, anonymization, scalability, and recurring costs before committing a development team.
+
+## Solution
+
+I refocused the POC on the component that delivers the value: extracting a visual representation of the photo, then searching for the nearest neighbors in the catalog. This approach is more measurable and manageable than an open-ended response from a multimodal LLM. I defined technical success criteria—the relevance of top results, latency, and failure rate—as well as business metrics related to engagement and conversion.
+
+I then developed a phased plan, assigned responsibilities across three Data Scientists, two Data Engineers, a Tech Lead, and an MLOps specialist, and separated build costs from recurring costs. The conservative and favorable scenarios make the assumptions used to calculate the break-even point explicit.
+
+## Architecture
+
+```text
+Mobile application
+       │ photo
+       ▼
+Ingestion and content moderation API
+       │
+anonymization / metadata removal
+       │
+secure Azure storage
+       │
+visual embeddings model
+       │
+catalog similarity index
+       │
+recommendation API → ranked items
+       │
+technical and business monitoring
+```
+
+The target architecture separates the real-time path from offline catalog preparation. User photos are not used to retrain a third-party service, and GDPR checkpoints are built directly into the flow.
+
+## Deployment
+
+This work is a scoping exercise, not a deployed product. I described an Azure target, the POC-to-industrialization sequence, the environments required, and operational responsibilities. Scalability is sized based on the traffic assumptions provided by marketing.
+
+The document also sets out the conditions for moving to production: business validation of the POC, DPO review, load testing, cost monitoring, model observability, and a data deletion procedure. This distinction avoids presenting a drawn architecture as a system that is already in operation.
+
+## Impact
+
+The outcome is a documented investment decision. The executive committee can compare the approaches, understand what will actually be tested, connect the budget to the roles involved, and visualize the time to break-even under several scenarios.
+
+Above all, the scoping work reduces the risk of building too soon: success criteria and exit points are defined before development begins. GDPR, technical, and economic risks become part of the plan rather than issues discovered at deployment time.
+
+## Learning
+
+I learned to defend an AI architecture based on the assumptions it enables us to test, rather than on the sophistication of the technologies selected. A good POC should isolate the main uncertainty and provide the sponsor with an actionable answer.
+
+This project also helped me improve my executive communication: quantifying trade-offs, making unknowns explicit, and presenting compliance as a design constraint rather than a final approval step.

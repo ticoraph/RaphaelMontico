@@ -1,0 +1,64 @@
+---
+title: "Semi-Supervised Learning for Brain Tumor Detection"
+slug: "labellisation-semi-supervisee-imagerie-medicale"
+tags: ["Python", "Computer Vision", "Deep Learning", "Semi-Supervised Learning", "Clustering", "PyTorch", "ResNet-18", "Pseudo-labeling", "Healthcare AI"]
+overview: "Pipeline using 1,500 MRI scans, combining ResNet-18 embeddings, clustering, weak labels, and iterative pseudo-labeling to make the most of limited expert annotations."
+---
+
+# Semi-Supervised Learning on Brain MRIs
+
+## Context
+
+For CurelyticsIA, I studied how to leverage an MRI dataset in which only a small portion had been annotated by experts. The dataset contains approximately 1,500 JPEG images at 512 × 512 pixels: 100 are split between the `cancer` and `normal` classes, while 1,400 have no label.
+
+The goal was to compare a supervised baseline with several ways of using unlabeled images, without confusing expert labels with model-generated labels.
+
+## Problem
+
+In medical imaging, expert annotation is costly and time-consuming. Training on only 100 examples limits generalization, but blindly assigning pseudo-labels can amplify the model's initial errors.
+
+It was therefore necessary to measure the quality of the representations and clusters, maintain an independent evaluation set, and control the confidence and balance of pseudo-labels added at each iteration.
+
+## Solution
+
+I organized the pipeline into five notebooks. After exploration, a pretrained, frozen ResNet-18 extracts the embeddings. PCA and t-SNE are used to project these features; K-Means and DBSCAN generate clusters, which are compared with the 100 expert labels using the Adjusted Rand Index.
+
+I then trained a supervised baseline and a semi-supervised approach using weak labels followed by strong labels. A final notebook applies iterative pseudo-labeling: the confidence threshold increases from 0.70 to 0.99, with at most 50 new images per class per round. The labeled dataset thus grows from 80 training examples to 510, while limiting unbalanced additions.
+
+## Architecture
+
+```text
+100 labeled MRIs + 1,400 unlabeled
+                   │
+         preprocessing 512 × 512
+                   │
+        frozen ResNet-18 → embeddings
+                   │
+       PCA / t-SNE → K-Means / DBSCAN
+                   │
+       weak labels + expert labels
+                   │
+ supervised / semi-supervised CNN
+                   │
+ confidence-based iterative pseudo-labeling
+```
+
+Strongly and weakly labeled datasets remain distinguishable throughout the pipeline. Evaluation is performed on a split held out from the label-generation steps.
+
+## Deployment
+
+This project is a research study delivered as a series of ordered Jupyter notebooks, not a deployed medical tool. The Python environment can be recreated with `requirements.txt`, then notebooks 1 through 5 are run in order.
+
+Intermediate models, metrics, and visualizations are used to compare the protocols. Any clinical use would require external validation, more representative data, and a regulatory framework not included in this academic POC.
+
+## Impact
+
+Among the clustering methods tested, K-Means on the PCA projection achieved the highest measured ARI, 0.3304: a signal is present, but it remains too weak to consider the clusters expert annotations. This measurement prevented overinterpreting visualizations that appeared to show clear separation.
+
+The supervised baseline achieves an F1 score of 0.9327 on the notebook's evaluation set. Iterative pseudo-labeling raises the best F1 score from 0.8990 with 80 images to 0.9499 after the first expansion to 180 images; subsequent rounds do not improve on this record. This plateau provides information that is just as useful as the initial gain: adding more automatically generated labels does not guarantee better generalization.
+
+## Learning
+
+I learned to separate three questions that are often conflated: do the embeddings structure the data, do the clusters correspond to the medical classes, and do weak labels actually improve the classifier? Each question requires its own metric.
+
+Pseudo-labeling also showed me the risk of confirmation bias. Progressive thresholds, per-class quotas, and maintaining an independent test set are essential to ensure the model does not simply reinforce its own certainty.

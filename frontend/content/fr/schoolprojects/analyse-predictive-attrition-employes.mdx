@@ -1,0 +1,60 @@
+---
+title: "Analyse prédictive de l'attrition des employés"
+slug: "analyse-predictive-attrition-employes"
+tags: ["Python", "Machine Learning", "Classification", "Scikit-learn", "CatBoost", "XGBoost", "SHAP", "HR Analytics", "SMOTE"]
+overview: "Pipeline de classification qui fusionne trois sources RH, prédit le départ d'un collaborateur et explique les facteurs de risque avec SHAP."
+---
+
+# Analyse prédictive de l'attrition des employés
+
+## Contexte
+
+Pour ce projet de HR Analytics, j'ai travaillé sur les départs de collaborateurs d'une ESN. Trois fichiers décrivaient des facettes différentes du même effectif : données SIRH, enquête de satisfaction et évaluations de performance. Mon objectif était de réunir ces signaux pour produire une analyse compréhensible par les RH et un modèle capable d'identifier les profils à risque.
+
+## Problème
+
+La classe utile — les salariés ayant quitté l'entreprise — est minoritaire. Une accuracy élevée pouvait donc cacher un modèle incapable de détecter les départs. Les données contenaient aussi des variables catégorielles, ordinales et numériques qui ne pouvaient pas être préparées de la même manière.
+
+Je devais enfin expliquer les prédictions. Dans un contexte RH, un score sans facteurs contributifs est difficile à utiliser et peut encourager des décisions opaques.
+
+## Solution
+
+J'ai organisé le travail en trois notebooks séquentiels. Le premier joint les sources par identifiant salarié, nettoie les données et construit des indicateurs composites sur le revenu, l'environnement de travail, la mobilité et l'équilibre vie professionnelle/vie personnelle. Le second applique l'encodage adapté à chaque variable et utilise les corrélations de Pearson et Spearman pour guider la sélection.
+
+Le dernier notebook compare un `DummyClassifier`, une régression logistique, XGBoost et CatBoost. J'ai intégré SMOTE ou le sous-échantillonnage dans des pipelines `imblearn` afin que le rééquilibrage n'ait lieu que sur l'entraînement. La validation croisée, les matrices de confusion, les courbes ROC/Precision-Recall, l'importance par permutation et SHAP complètent la comparaison.
+
+## Architecture
+
+```text
+SIRH ─┐
+Sondage ─┼─ jointure + EDA → indicateurs composites
+Évaluations ─┘                         │
+                                      ▼
+                         encodage + sélection
+                                      │
+                                      ▼
+         pipelines de classification + rééquilibrage
+                                      │
+                                      ▼
+             validation croisée + SHAP + exports
+```
+
+Chaque notebook exporte le CSV consommé par le suivant. Les rapports et graphiques sont regroupés par run dans `exports/` et `images/`, ce qui conserve les résultats sans mélanger les étapes du pipeline.
+
+## Déploiement
+
+Ce projet est une étude Data Science livrée sous forme de notebooks, et non une API de production. L'environnement se recrée avec Python 3.13 et `uv`; l'exécution suit l'ordre analyse, feature engineering, modélisation.
+
+Le run de référence `FINAL` contient les rapports de classification, matrices de confusion, courbes, importances et graphiques SHAP. Cette forme de livraison est adaptée à la restitution RH : elle privilégie l'audit des transformations et l'interprétation du modèle.
+
+## Impact
+
+Sur le jeu de test de référence, CatBoost atteint 86 % d'accuracy mais seulement 61 % de rappel sur la classe des départs. XGBoost obtient 83 % d'accuracy et 83 % de rappel sur cette classe, au prix de davantage de faux positifs. La régression logistique atteint elle aussi 83 % de rappel avec un F1 minoritaire de 0,52.
+
+Ces résultats rendent le compromis métier visible : CatBoost est plus précis globalement, tandis que XGBoost et la régression logistique détectent davantage de départs potentiels. Les écarts train/test signalent en outre du surapprentissage sur les modèles de boosting, information indispensable avant toute utilisation opérationnelle.
+
+## Apprentissage
+
+J'ai appris à ne pas sélectionner un modèle RH sur une seule métrique. Le rappel de la classe minoritaire, le coût des faux positifs et la stabilité en validation croisée racontent une histoire plus utile que l'accuracy.
+
+SHAP m'a également appris à distinguer explication globale et explication individuelle : connaître les variables les plus importantes ne suffit pas pour comprendre pourquoi un collaborateur précis reçoit un score donné.

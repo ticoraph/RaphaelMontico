@@ -1,0 +1,67 @@
+---
+title: "Agent IA conversationnel pour l'apprentissage des ouvertures aux échecs"
+slug: "agent-ia-apprentissage-echecs"
+tags: ["Python", "LangGraph", "RAG", "FastAPI", "Milvus", "Angular", "Stockfish", "Docker", "LLM"]
+overview: "Agent conversationnel qui analyse une position d'échecs, combine théorie, moteur Stockfish, recherche vectorielle et vidéos pédagogiques, puis restitue le tout dans une interface interactive."
+---
+
+# Agent IA pour l'apprentissage des ouvertures aux échecs
+
+## Contexte
+
+J'ai réalisé ce POC pour la Fédération Française des Échecs afin d'aider de jeunes joueurs à comprendre une ouverture à partir d'une position réelle, et non d'un simple nom saisi dans un moteur de recherche. Le dépôt devait réunir plusieurs sources très différentes : la théorie de Lichess, l'évaluation tactique de Stockfish, des articles sur les ouvertures et des vidéos pédagogiques.
+
+Le résultat est une application complète : un échiquier Angular côté utilisateur et une API FastAPI qui orchestre l'analyse. Le projet m'a aussi permis d'explorer LangGraph sur un cas où chaque outil a une responsabilité claire.
+
+## Problème
+
+Une position peut encore appartenir à une ouverture connue, ou avoir déjà quitté la théorie. Une réponse utile doit donc choisir la bonne source, valider le format FEN, expliquer la position et rester exploitable par un joueur.
+
+Les principales difficultés étaient de :
+
+- combiner des services externes ayant leurs propres formats, erreurs, délais et quotas ;
+- retrouver un contexte textuel pertinent sans injecter un article entier dans la réponse ;
+- conserver une expérience fluide malgré le coût des embeddings et du moteur d'échecs ;
+- rendre l'installation reproductible, y compris la persistance de l'index vectoriel.
+
+## Solution
+
+J'ai construit un pipeline d'analyse piloté par LangGraph. À partir d'une FEN, l'API valide la position avec `python-chess`, interroge Lichess pour les coups théoriques et utilise Stockfish lorsqu'une évaluation plus générale est nécessaire. En parallèle, elle recherche des passages sur l'ouverture dans Milvus et peut proposer des vidéos via YouTube Data API v3.
+
+Pour le RAG, j'ai mis en place un script d'ingestion qui collecte les articles, les découpe en segments d'environ 1 200 caractères avec chevauchement, génère des embeddings avec `Qwen/Qwen3-Embedding-0.6B`, puis les stocke dans une collection Milvus de dimension 1 024. L'interface Angular synchronise l'échiquier, la barre d'évaluation et les onglets de recommandations.
+
+## Architecture
+
+```text
+Angular 19 + cm-chessboard
+          │  /api/v1 (proxy nginx)
+          ▼
+      FastAPI
+          │
+      LangGraph
+     ┌────┼───────────┬───────────┐
+     ▼    ▼           ▼           ▼
+ Lichess  Stockfish   Milvus      YouTube
+                       │
+                 etcd + MinIO
+```
+
+Le backend sépare les routes et les services : analyse complète, coups, évaluation, recherche vectorielle, vidéos, position aléatoire et healthcheck. Cette séparation m'a permis de tester chaque intégration indépendamment avant de les réunir dans le graphe.
+
+## Déploiement
+
+J'ai conteneurisé l'ensemble avec Docker Compose : backend FastAPI, frontend Angular servi par nginx, Stockfish et la stack Milvus (`Milvus`, `etcd`, `MinIO`). Les healthchecks ordonnent le démarrage, tandis que des volumes conservent l'index après un redémarrage.
+
+Après `docker compose up --build`, une commande d'ingestion initialise la base documentaire. L'API expose Swagger sur le port 8000 et l'application web sur le port 3000. Les secrets Lichess et YouTube restent dans l'environnement et ne sont pas intégrés aux images.
+
+## Impact
+
+Le POC produit une analyse exploitable de bout en bout : coups théoriques, score Stockfish, contexte documentaire et ressources vidéo sont réunis autour de la même position. Six FEN de démonstration couvrent notamment la Sicilienne, le Gambit Dame, l'Espagnole, l'Est-Indienne et l'Italienne.
+
+Au-delà de la démo, le dépôt contient les scripts d'ingestion, les contrôles de santé, les commandes de diagnostic et la procédure de vérification des volumes. Une nouvelle installation peut donc être reconstruite et testée sans dépendre de mon environnement de développement.
+
+## Apprentissage
+
+Ce projet m'a appris à concevoir un agent comme une orchestration d'outils spécialisés plutôt que comme un unique appel à un LLM. J'ai aussi mesuré l'importance de la qualité d'ingestion dans un RAG : choix du découpage, modèle d'embedding, persistance et diagnostic de la collection comptent autant que le prompt final.
+
+Enfin, le travail full-stack m'a obligé à penser aux états intermédiaires visibles par l'utilisateur — chargement, absence de résultat, erreur d'API — et pas uniquement au chemin nominal du pipeline IA.

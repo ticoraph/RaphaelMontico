@@ -1,0 +1,64 @@
+---
+title: "RAG System for Cultural Event Recommendations"
+slug: "systeme-rag-recommandation-evenements-culturels"
+tags: ["Python", "RAG", "LangChain", "FAISS", "Mistral AI", "FastAPI", "Docker", "Hugging Face", "Ragas"]
+overview: "Cultural assistant that ingests OpenAgenda, indexes events in FAISS, and generates responses in French using Mistral, an API, and RAGAS evaluation."
+---
+
+# Cultural Event Recommendation RAG System
+
+## Context
+
+I created PulsEvents to make it possible to search for cultural outings using natural language: a jazz concert in Lyon, an activity this weekend, or an event matching a theme. The data comes from the public OpenAgenda dataset, limited to the Auvergne-Rhône-Alpes region and the next twelve months.
+
+The project needed to go beyond keyword search. So I built a complete RAG pipeline, from ingestion to an API capable of citing the titles and dates used in its response.
+
+## Problem
+
+OpenAgenda descriptions contain HTML, URLs, variable date formats, and incomplete metadata. Lexical search easily misses an intent expressed in different words; an LLM used on its own can make up an event.
+
+The system also needed to start cleanly when the index was missing or corrupted, handle provider timeouts, and allow retrieval and generation to be measured separately.
+
+## Solution
+
+I developed a paginated ingestion pipeline that filters by region and time period, cleans text, and normalizes cities, postal codes, and French dates. Each event is split by `RecursiveCharacterTextSplitter` into 400-character chunks with 40 characters of overlap.
+
+The multilingual `paraphrase-multilingual-MiniLM-L12-v2` embeddings feed a persistent FAISS index. For each question, the retriever selects the five closest chunks; LangChain injects them into a prompt sent to `mistral-small-latest`. FastAPI exposes the response, rebuild, and service status.
+
+## Architecture
+
+```text
+OpenAgenda
+    │ ingestion + cleaning
+    ▼
+chunks 400 / overlap 40
+    │
+Hugging Face embeddings
+    │
+FAISS index on disk
+    │ top 5
+question → LangChain → Mistral AI
+                         │
+                       FastAPI
+                 /ask /rebuild /health
+```
+
+The index is loaded into memory at startup. If it is missing, the API enters a degraded state instead of hiding the problem; `/rebuild` can rebuild the index and then reload the chain without redeploying the code.
+
+## Deployment
+
+The project provides a `Dockerfile` and a Docker Compose file. The `data/` volume is mounted in the container to preserve the FAISS index across restarts, while Mistral keys remain in `.env`.
+
+GitHub Actions runs the tests, coverage, and RAGAS evaluation on every push to the main branch. Input and service errors are distinguished by status codes 400, 422, 503, 504, or 500; Swagger documents the HTTP contract.
+
+## Impact
+
+PulsEvents answers thematic, geographic, or time-based questions using events that are actually indexed. The service can be refreshed on demand without rebuilding the Docker image, separating the data cycle from the application cycle.
+
+A reference set of questions and answers feeds RAGAS with `context_recall`, `faithfulness`, and `answer_correctness`. The repository does not claim perfect quality: it documents, in particular, the regional restriction, the twelve-month horizon, and the dependency on a local index loaded into memory.
+
+## Lessons Learned
+
+I learned how to diagnose a RAG system by separating ingestion, chunking, retrieval, and generation. Changing the prompt cannot fix an event missing from the index or a chunk that has lost its date.
+
+I also understood the value of an explicit degraded state and a rebuild endpoint: vector data operations must be treated as a product feature, not as a one-off preparation command.

@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend-api",
+      "runtimeExecutable": "backend/.venv/bin/uvicorn",
+      "runtimeArgs": ["app.main:app", "--port", "8080", "--app-dir", "backend", "--env-file", "backend/.env"],
+      "port": 8080
+    },
+    {
+      "name": "frontend-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
+      "port": 3000
+    },
+    {
+      "name": "frontend-static",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve@latest", "frontend/out", "-l", "4174"],
+      "port": 4174
+    }
+  ]
+}

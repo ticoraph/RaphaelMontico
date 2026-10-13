@@ -1,0 +1,62 @@
+---
+title: "Training RL Agents to Control a Lunar Lander"
+slug: "entrainement-agent-rl-lunar-lander"
+tags: ["Python", "Reinforcement Learning", "PyTorch", "Stable-Baselines3", "Gymnasium", "DQN", "PPO", "FastAPI", "Gradio"]
+overview: "An experimental journey from random control to optimized PPO, followed by exposing a LunarLander agent through an API with videos and telemetry."
+---
+
+# Training RL Agents for a Lunar Lander
+
+## Context
+
+I built `AstroDynamics` to learn Reinforcement Learning step by step, then turn the final experience into a demonstrable system. The progression starts with CartPole, moves on to implementing a DQN, and culminates in the autonomous control of `LunarLander-v3` with PPO.
+
+The repository therefore contains more than just a final model: it preserves the exercises that show how I learned about observation and action spaces, rewards, exploration, and tuning.
+
+## Problem
+
+In RL, training can appear successful thanks to a few favorable episodes, even while the policy remains unstable. Performance depends heavily on the choice of algorithm, hyperparameters, and evaluation protocol.
+
+The agent also needed to be observable. An average reward alone does not explain a landing, fuel usage, or the trajectory followed.
+
+## Solution
+
+I started with a random policy on `CartPole-v1`, then implemented a DQN in PyTorch to work directly with the replay buffer, target network, and Q-value updates. For LunarLander, I used PPO with Stable-Baselines3 and ran several hyperparameter experiments tracked in TensorBoard.
+
+The selected model, `ppo_lunar_lander_XP2.zip`, is loaded by a FastAPI backend. One route launches a mission and generates its video; others retrieve mission history and telemetry or clear the trials. Two Gradio interfaces separate the control center from the analytics dashboard.
+
+## Architecture
+
+```text
+Gymnasium
+  ├─ CartPole : baseline → DQN PyTorch
+  └─ LunarLander : PPO + tuning
+                   │
+              modèle .zip
+                   │
+                FastAPI
+       ┌───────────┴───────────┐
+       ▼                       ▼
+Gradio mission            Gradio dashboard
+vidéo + télémétrie        historique + statistiques
+```
+
+The TensorBoard logs document the evolution of rewards. The API stores missions so that the analytics interface can compare trajectories after inference.
+
+## Deployment
+
+The system runs as three local processes: FastAPI on port 8000, the mission interface on port 7860, and the Gradio dashboard separately. Dependencies include Gymnasium, Stable-Baselines3, PyTorch, ImageIO/FFmpeg, and Matplotlib.
+
+This delivery is intended for reproducible demonstrations rather than a permanent cloud service. The model is versioned as an artifact in `models/`; the interfaces use the API instead of reimplementing the policy on the frontend.
+
+## Impact
+
+The selected agent achieves an average reward of around 221 points, above the success threshold of 200, with a controlled landing between the flags and optimized engine use. The video makes the behavior verifiable beyond the aggregate metric.
+
+The project also provides a complete learning path: each step can be replayed independently, while the API and dashboards make the best agent accessible without opening the training code.
+
+## Learning
+
+I learned to separate training from evaluation and assess a policy across multiple episodes, using both the mean and variance. Tuning one parameter at a time helped me understand its effects rather than chasing a score through opaque trials.
+
+Manually implementing the DQN made the abstractions later provided by Stable-Baselines3 more concrete. Finally, adding videos and telemetry showed me that an agent’s observability is essential for interpreting a reward.

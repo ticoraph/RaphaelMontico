@@ -1,0 +1,67 @@
+---
+title: "Cadrage stratégique d'un projet IA de recommandation vestimentaire"
+slug: "cadrage-projet-ia-recommandation-mode"
+tags: ["Cadrage IA", "Computer Vision", "System Design", "Azure", "ROI", "RGPD", "Product Management"]
+overview: "Dossier de cadrage transformant une idée de recommandation vestimentaire par photo en POC chiffré, planifié et défendable devant un COMEX."
+---
+
+# Cadrage d'une application de recommandation vestimentaire par photo
+
+## Contexte
+
+J'ai traité ce projet comme une mission de cadrage en amont du développement. Le sponsor souhaitait permettre à un utilisateur de photographier un vêtement pour retrouver des articles proches dans un catalogue. Mon rôle était de transformer cette intention produit en une proposition IA réaliste, avec un périmètre de POC, une architecture cible, une équipe, un budget et des critères de décision.
+
+Le livrable principal est un dossier destiné à un COMEX réunissant des profils produit, data et conformité. Il devait donc rendre les choix techniques compréhensibles sans réduire le sujet à une simple démonstration de modèle.
+
+## Problème
+
+La demande initiale ne précisait ni le niveau de similarité attendu, ni le volume de trafic, ni les contraintes sur les photos utilisateurs. Deux familles de solutions étaient possibles : calculer des embeddings visuels pour rechercher des articles similaires, ou déléguer l'analyse à un LLM multimodal.
+
+Le cadrage devait arbitrer rapidement entre valeur, coût et risque. Il fallait également anticiper les données personnelles visibles sur une photo, l'hébergement, l'anonymisation, la montée en charge et le coût récurrent avant d'engager une équipe de développement.
+
+## Solution
+
+J'ai recentré le POC sur la brique qui porte la valeur : extraire une représentation visuelle de la photo puis rechercher les voisins les plus proches dans le catalogue. Cette approche est plus mesurable et plus maîtrisable qu'une réponse libre de LLM multimodal. J'ai défini des critères de succès techniques — pertinence des premiers résultats, latence et taux d'échec — et des indicateurs métier liés à l'engagement et à la conversion.
+
+J'ai ensuite construit un plan par phases, réparti les responsabilités entre trois Data Scientists, deux Data Engineers, un Tech Lead et un profil MLOps, puis séparé coûts de construction et coûts récurrents. Les scénarios prudent et favorable rendent explicites les hypothèses utilisées pour calculer le point de rentabilité.
+
+## Architecture
+
+```text
+Application mobile
+       │ photo
+       ▼
+API d'ingestion et contrôle de contenu
+       │
+anonymisation / suppression des métadonnées
+       │
+stockage Azure sécurisé
+       │
+modèle d'embeddings visuels
+       │
+index de similarité du catalogue
+       │
+API de recommandation → articles classés
+       │
+monitoring technique et métier
+```
+
+L'architecture cible sépare le chemin temps réel de la préparation hors ligne du catalogue. Les photos utilisateurs ne servent pas à réentraîner un service tiers, et les points de contrôle RGPD apparaissent directement dans le flux.
+
+## Déploiement
+
+Ce travail est un cadrage, pas un produit déployé. J'ai décrit une cible Azure, la séquence POC puis industrialisation, les environnements nécessaires et les responsabilités opérationnelles. La montée en charge est dimensionnée à partir des hypothèses de trafic fournies par le marketing.
+
+Le dossier prévoit aussi les conditions d'un passage en production : validation métier du POC, revue DPO, tests de charge, supervision des coûts, observabilité du modèle et procédure de suppression des données. Cette distinction évite de présenter une architecture dessinée comme un système déjà exploité.
+
+## Impact
+
+Le résultat est une décision d'investissement documentée. Le COMEX peut comparer les approches, comprendre ce qui sera réellement testé, relier le budget aux profils mobilisés et visualiser le délai avant rentabilité selon plusieurs scénarios.
+
+Le cadrage réduit surtout le risque de construire trop tôt : les critères de succès et les points de sortie sont définis avant le développement. Les risques RGPD, techniques et économiques deviennent des éléments du plan, plutôt que des sujets découverts au moment du déploiement.
+
+## Apprentissage
+
+J'ai appris à défendre une architecture IA par les hypothèses qu'elle permet de tester, et non par la sophistication des technologies retenues. Un bon POC doit isoler l'incertitude principale et fournir une réponse exploitable au sponsor.
+
+Ce projet m'a aussi fait progresser dans la communication exécutive : chiffrer les compromis, expliciter les inconnues et présenter la conformité comme une contrainte de conception, pas comme une validation finale.

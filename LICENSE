@@ -1,0 +1,43 @@
+Copyright (c) 2026 Raphaël Montico. All rights reserved.
+
+This repository and everything in it — source code, text and MDX content,
+translations, images, photographs, and other assets — is proprietary. It is
+published for viewing only.
+
+PERMITTED
+  You may view and read the contents of this repository, for example to evaluate
+  the author's work. Nothing in this notice limits the rights GitHub's Terms of
+  Service give users of a public repository (viewing and forking on GitHub).
+
+NOT PERMITTED without the author's prior written permission
+  - copying or reproducing any part of this repository, in whole or in part, in
+    any form or medium (including text, images and photographs);
+  - modifying it, or creating derivative works based on it;
+  - distributing, publishing, sublicensing, selling, or hosting it or any part
+    of it, including as a copy of this website;
+  - using it, or the author's name, likeness or photographs, to present work as
+    your own or to imply any affiliation with or endorsement by the author;
+  - using it as training or fine-tuning data for machine-learning models.
+
+THIRD-PARTY COMPONENTS
+  Dependencies installed through package managers (npm, pip) are not part of
+  this repository and remain under their own licenses.
+
+NO WARRANTY
+  THE REPOSITORY IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED. THE AUTHOR SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY ARISING FROM ITS USE.
+
+--------------------------------------------------------------------------------
+
+Copyright (c) 2026 Raphaël Montico. Tous droits réservés.
+
+Ce dépôt (code source, contenus textes et MDX, traductions, images, photographies
+et autres ressources) est propriétaire et publié pour consultation uniquement.
+Toute reproduction, copie, modification, œuvre dérivée, redistribution,
+publication ou hébergement, en tout ou partie, ainsi que son usage comme données
+d'entraînement de modèles d'apprentissage automatique, est interdit sans
+autorisation écrite préalable de l'auteur. Les dépendances tierces conservent
+leurs propres licences.
+
+Contact : https://www.linkedin.com/in/raphaelmontico

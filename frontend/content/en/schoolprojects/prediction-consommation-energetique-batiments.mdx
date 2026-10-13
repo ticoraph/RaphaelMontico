@@ -1,0 +1,64 @@
+---
+title: "Building Energy Consumption Prediction"
+slug: "prediction-consommation-energetique-batiments"
+tags: ["Python", "Machine Learning", "Scikit-learn", "Pandas", "EDA", "Feature Engineering", "Régression", "Random Forest", "GridSearchCV"]
+overview: "Regression pipeline for non-residential buildings in Seattle to estimate energy consumption and emissions before an energy audit."
+---
+
+# Energy Prediction for Seattle Buildings
+
+## Context
+
+I worked with open data from the Seattle Building Energy Benchmarking program. The city wanted to better target non-residential buildings for audits without having to measure each building’s energy consumption first.
+
+The project focuses on two metrics: `SiteEnergyUse(kBtu)`, on-site energy use, and `TotalGHGEmissions`, total greenhouse gas emissions. The predictions use only features available before an audit: floor area, age, neighborhood, number of floors, and building uses.
+
+## Problem
+
+The raw dataset combines different building types and units, inconsistent values, missing data, and outliers. Several variables describe nearly the same information, while a building’s uses form a multi-category feature that is difficult to encode.
+
+The small number of buildings and the heterogeneous uses also make overfitting likely. It was important to compare out-of-training performance and not mistake an excellent training score for good generalization.
+
+## Solution
+
+I built three sequential notebooks. The first filters non-residential buildings, cleans erroneous values, removes redundant variables, and analyzes the targets. The second creates building age, parking and energy-use indicators, average floor area, then encodes neighborhood, property type, and multiple uses.
+
+The third compares `DummyRegressor`, linear regression, SVR, and Random Forest using ten-fold cross-validation. I tracked R², MAE, RMSE, and MAPE, then optimized Random Forest with GridSearchCV and interpreted the variables using permutation importance.
+
+## Architecture
+
+```text
+seatle.csv
+    │
+filtering + cleaning + EDA
+    │
+seatle_after_analyze.csv
+    │
+feature engineering + encodings
+    │
+seatle_after_feature_engineering.csv
+    │
+baseline │ linear │ SVR │ Random Forest
+    │
+10-fold CV + GridSearch + permutation importance
+```
+
+Each notebook explicitly consumes the CSV produced by the previous one. This dependency makes the pipeline easy to follow, but also means downstream notebooks must be checked whenever a column changes.
+
+## Deployment
+
+The deliverable is a reproducible analysis in JupyterLab, not a production application. The environment is set up with `requirements.txt`; validation consists of running the notebooks in order and checking the resulting CSV files and visualizations.
+
+There are intentionally no API or automated tests in this historical repository. The next step toward productionizing it would be to turn the data preparation steps into a versioned Scikit-learn pipeline before serving the model.
+
+## Impact
+
+Random Forest outperforms linear regression: its test R² reaches approximately 0.58, compared with approximately 0.54 in cross-validation for regression. After tuning, the best parameters are `n_estimators=300`, `max_depth=9`, and `min_samples_split=5`, yielding a test R² of approximately 51.8%.
+
+However, the substantial gap between training and test scores shows that generalization is limited. The results are therefore useful for prioritizing or preselecting audits, but not sufficient to replace an actual energy measurement.
+
+## Learning
+
+I learned to build features based on how a building operates rather than feeding the model every available column. Age, floor area, and the mix of uses give the model more interpretable signals.
+
+This project also taught me how to communicate imperfect performance. Identifying overfitting and limiting the recommended use of the model is more professional than showing only its best R².

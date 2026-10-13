@@ -1,0 +1,90 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+
+env:
+  AWS_REGION: eu-central-1
+
+jobs:
+  deploy:
+    name: Build & Deploy Backend
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run DB migrations
+        # Applied before the new image is deployed, so App Runner never serves
+        # code that expects a schema that isn't there yet. DATABASE_URL here is a
+        # GitHub Actions secret distinct from the Gemini key App Runner itself
+        # gets from Secrets Manager — this job runs in GH Actions, not in the
+        # App Runner container, so it needs its own way to reach Postgres
+        # (requires the DB to be network-reachable from the runner; see the infra repo).
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEY: unused-by-migrations
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          alembic upgrade head
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOYER_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag and push image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            ./backend
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY --all-tags
+
+      - name: Deploy to App Runner
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws apprunner update-service \
+            --service-arn ${{ vars.APPRUNNER_SERVICE_ARN }} \
+            --source-configuration '{
+              "ImageRepository": {
+                "ImageIdentifier": "'"$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"'",
+                "ImageRepositoryType": "ECR",
+                "ImageConfiguration": {
+                  "Port": "8080"
+                }
+              },
+              "AuthenticationConfiguration": {
+                "AccessRoleArn": "'"${{ vars.APPRUNNER_ECR_ROLE_ARN }}"'"
+              }
+            }'
+
+      - name: Wait for deployment
+        run: |
+          echo "Deployment initiated. App Runner will update the service."
+          echo "Monitor at: https://${{ env.AWS_REGION }}.console.aws.amazon.com/apprunner"

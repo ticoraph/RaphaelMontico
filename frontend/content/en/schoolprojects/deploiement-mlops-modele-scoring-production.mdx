@@ -1,0 +1,66 @@
+---
+title: "Deployment and monitoring of a scoring model"
+slug: "deploiement-mlops-modele-scoring-production"
+tags: ["Python", "FastAPI", "MLOps", "LightGBM", "Docker", "GitHub Actions", "Streamlit", "Data Drift", "Pytest"]
+overview: "Production deployment of a LightGBM model with a single-record and batch API, a multi-architecture Docker image, CI/CD, and a data drift dashboard."
+---
+
+# Deployment and monitoring of a scoring model
+
+## Context
+
+After the credit scoring modeling phase, I built `ReadyToSpendMonitor` to handle the next stage of the lifecycle: serving the model, logging its behavior, and detecting when production data diverges from the training data.
+
+The repository brings together a FastAPI API, a LightGBM model trained on the 40 most important features, a Streamlit dashboard, and a CI/CD pipeline. It also includes a script that replays a dataset against the API to test load and populate the demo logs.
+
+## Problem
+
+A `model.pkl` file is not a service. Inputs need to be validated, the model loaded efficiently, single and batch requests handled, decisions traced, and incidents made observable. Even a stable API can become less reliable if feature distributions change.
+
+I therefore needed to address both software quality and ML quality: tests, a reproducible image, inference time, log format, training reference, and a statistical drift threshold.
+
+## Solution
+
+The API loads the LightGBM artifact once at startup and exposes `/predict`, `/predict_batch`, and `/health`. Pydantic validates the 40 features and several business rules. Batch requests parallelize predictions with `ThreadPoolExecutor`; a `cProfile` mode can generate per-request profiles.
+
+Each prediction writes a structured JSON line with a timestamp, input, score, decision, confidence, latency, and model version. The Streamlit dashboard compares these observations with the reference dataset, displays volumes, inference times, and decision distributions, then applies a Kolmogorov-Smirnov test to each feature (`p-value < 0,01`).
+
+## Architecture
+
+```text
+Dataset Home Credit
+       │
+feature engineering + sélection top 40
+       │
+LightGBM + liste des features
+       │
+FastAPI ── /predict
+   │     └─ /predict_batch
+   │
+logs JSONL de production
+   │
+Streamlit
+   ├─ métriques opérationnelles
+   ├─ distributions référence/production
+   └─ alertes KS de data drift
+```
+
+The container uses Supervisor to launch the API, dashboard, and data insertion job. The log volume remains mounted from the host to preserve the history.
+
+## Deployment
+
+The `Dockerfile` builds a single environment exposing FastAPI on port 8000 and Streamlit on port 8501. GitHub Actions installs dependencies, runs Pytest with coverage, publishes the HTML report, then uses Buildx to build a `linux/amd64` and `linux/arm64` image.
+
+On the main branch, the image is pushed to Docker Hub with the `latest` and commit SHA tags. Docker credentials are kept in GitHub secrets. The repository also documents a local Uvicorn/Streamlit launch to diagnose each component separately.
+
+## Impact
+
+The model can be consumed by a single-request or batch client, with a consistent decision at the business threshold of 0.2. The logs directly feed a dashboard showing the number of predictions, average latency, score distribution, recent decisions, and drifting features.
+
+The CI/CD pipeline turns every approved change into a traceable multi-architecture image. Separating the training reference from production observations makes it possible to detect potential degradation before waiting for actual labels.
+
+## Lessons learned
+
+I learned that ML monitoring starts with a data contract and logs designed in advance. Without a feature list, model version, and comparable reference, a drift alert is not actionable.
+
+I also learned to distinguish data drift from a drop in performance: the KS test signals a change in distribution, not a model error. It triggers an investigation; on its own, it does not justify automatic retraining.

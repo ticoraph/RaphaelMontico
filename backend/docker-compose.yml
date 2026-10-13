@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: backend
+      POSTGRES_PASSWORD: backend
+      POSTGRES_DB: backend
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file: .env
+    environment:
+      # Overrides .env's localhost DATABASE_URL: from inside the compose network,
+      # postgres is reachable by service name, not via the host's published port.
+      DATABASE_URL: postgresql://backend:backend@postgres:5432/backend
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:

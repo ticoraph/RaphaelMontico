@@ -1,0 +1,58 @@
+{
+  "nav": {
+    "home": "Home",
+    "proxp": "Experience",
+    "perxp": "Personal Projects",
+    "schoolprojects": "Academic Projects",
+    "diplomas": "Education",
+    "chat": "AI Assistant"
+  },
+  "proxp": {
+    "title": "Experience",
+    "backToList": "Back to Experience"
+  },
+  "perxp": {
+    "title": "Personal Projects",
+    "backToList": "Back to Personal Projects"
+  },
+  "schoolprojects": {
+    "title": "Academic Projects",
+    "backToList": "Back to Academic Projects"
+  },
+  "diplomas": {
+    "title": "Education",
+    "backToList": "Back to Education"
+  },
+  "chat": {
+    "title": "AI Assistant",
+    "intro": "Ask me anything about Raphaël's background, projects, and technical decisions. Answers are grounded in the actual portfolio content, with citations.",
+    "placeholder": "Ask a question...",
+    "send": "Send",
+    "thinking": "Thinking...",
+    "sources": "Sources:",
+    "metricRetrieval": "retrieval",
+    "metricGeneration": "generation",
+    "errorMessage": "Something went wrong. Please try again.",
+    "rateLimited": "Too many questions in a short time. Please try again in a minute.",
+    "disclaimer": "AI-generated answers based on the portfolio content — they may contain mistakes.",
+    "suggestion1": "How is this site's RAG system architected (retrieval, embeddings, LLM)?",
+    "suggestion2": "What AI agents has he built?",
+    "suggestion3": "Has he deployed an ML model to production?",
+    "suggestion4": "Which degree specialized him in AI / data science?",
+    "suggestion5": "Does he have experience with open-source LLMs like Qwen3?",
+    "systemPromptSummary": "View the system prompt used to generate answers",
+    "systemPromptNote": "The actual backend (RAG) system prompt, prepended to the vector-search context and the user's question — kept in French, as defined in the source code.",
+    "exampleChunkSummary": "View an example chunk retrieved via vector search",
+    "exampleChunkNote": "Each chunk corresponds to a section of the site's content, indexed with its embedding; this is the format that feeds the prompt's context above.",
+    "indexLastUpdated": "The vector database was last updated on {date}"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  },
+  "locale": {
+    "switch": "Switch language"
+  },
+  "home": {
+    "photoAlt": "Portrait of Raphaël Montico"
+  }
+}

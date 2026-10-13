@@ -1,0 +1,67 @@
+---
+title: "Conversational AI Agent for Learning Chess Openings"
+slug: "agent-ia-apprentissage-echecs"
+tags: ["Python", "LangGraph", "RAG", "FastAPI", "Milvus", "Angular", "Stockfish", "Docker", "LLM"]
+overview: "Conversational agent that analyzes a chess position, combines theory, the Stockfish engine, vector search, and instructional videos, then presents everything in an interactive interface."
+---
+
+# AI Agent for Learning Chess Openings
+
+## Context
+
+I built this POC for the French Chess Federation to help young players understand an opening from an actual position, rather than from a name simply entered into a search engine. The repository needed to bring together several very different sources: Lichess theory, Stockfish tactical evaluation, articles about openings, and instructional videos.
+
+The result is a complete application: an Angular chessboard for users and a FastAPI API that orchestrates the analysis. The project also gave me the opportunity to explore LangGraph in a use case where each tool has a clearly defined responsibility.
+
+## Problem
+
+A position may still belong to a known opening, or may have already left established theory. A useful response therefore needs to select the right source, validate the FEN format, explain the position, and remain actionable for a player.
+
+The main challenges were to:
+
+- combine external services with their own formats, errors, response times, and quotas;
+- retrieve relevant textual context without injecting an entire article into the response;
+- maintain a smooth experience despite the cost of embeddings and the chess engine;
+- make installation reproducible, including persistence of the vector index.
+
+## Solution
+
+I built an analysis pipeline orchestrated by LangGraph. Given a FEN, the API validates the position with `python-chess`, queries Lichess for theoretical moves, and uses Stockfish when a more general evaluation is needed. In parallel, it searches for passages about the opening in Milvus and can suggest videos through YouTube Data API v3.
+
+For RAG, I set up an ingestion script that collects articles, splits them into chunks of approximately 1,200 characters with overlap, generates embeddings with `Qwen/Qwen3-Embedding-0.6B`, then stores them in a Milvus collection with a dimension of 1,024. The Angular interface synchronizes the chessboard, evaluation bar, and recommendation tabs.
+
+## Architecture
+
+```text
+Angular 19 + cm-chessboard
+          │  /api/v1 (proxy nginx)
+          ▼
+      FastAPI
+          │
+      LangGraph
+     ┌────┼───────────┬───────────┐
+     ▼    ▼           ▼           ▼
+ Lichess  Stockfish   Milvus      YouTube
+                       │
+                 etcd + MinIO
+```
+
+The backend separates routes and services: full analysis, moves, evaluation, vector search, videos, random position, and healthcheck. This separation allowed me to test each integration independently before bringing them together in the graph.
+
+## Deployment
+
+I containerized the entire system with Docker Compose: the FastAPI backend, the Angular frontend served by nginx, Stockfish, and the Milvus stack (`Milvus`, `etcd`, `MinIO`). Healthchecks control the startup order, while volumes preserve the index across restarts.
+
+After `docker compose up --build`, an ingestion command initializes the document database. The API exposes Swagger on port 8000 and the web application on port 3000. Lichess and YouTube secrets remain in the environment and are not included in the images.
+
+## Impact
+
+The POC produces an actionable end-to-end analysis: theoretical moves, Stockfish score, document context, and video resources are brought together around the same position. Six demonstration FENs cover the Sicilian, Queen's Gambit, Ruy Lopez, King's Indian Defense, and Italian Game, among others.
+
+Beyond the demo, the repository contains ingestion scripts, health checks, diagnostic commands, and a procedure for verifying volumes. A new installation can therefore be rebuilt and tested without depending on my development environment.
+
+## Learning
+
+This project taught me to design an agent as an orchestration of specialized tools rather than as a single call to an LLM. I also saw how important ingestion quality is in RAG: chunking strategy, embedding model, persistence, and collection diagnostics matter just as much as the final prompt.
+
+Finally, the full-stack work required me to consider the intermediate states visible to the user—loading, no results, API errors—and not just the pipeline's happy path.

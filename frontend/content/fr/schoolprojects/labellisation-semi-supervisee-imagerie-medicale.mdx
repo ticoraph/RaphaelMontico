@@ -1,0 +1,64 @@
+---
+title: "Apprentissage semi-supervisé pour la détection de tumeurs cérébrales"
+slug: "labellisation-semi-supervisee-imagerie-medicale"
+tags: ["Python", "Computer Vision", "Deep Learning", "Semi-Supervised Learning", "Clustering", "PyTorch", "ResNet-18", "Pseudo-labeling", "Healthcare AI"]
+overview: "Pipeline sur 1 500 IRM combinant embeddings ResNet-18, clustering, labels faibles et pseudo-labellisation itérative pour exploiter peu d'annotations expertes."
+---
+
+# Apprentissage semi-supervisé sur des IRM cérébrales
+
+## Contexte
+
+Pour CurelyticsIA, j'ai étudié comment exploiter un jeu d'IRM dont seule une petite partie était annotée par des experts. Le dataset contient environ 1 500 images JPEG de 512 × 512 pixels : 100 sont réparties entre les classes `cancer` et `normal`, tandis que 1 400 ne possèdent pas de label.
+
+L'objectif était de comparer une baseline supervisée à plusieurs façons d'utiliser les images non annotées, sans confondre labels experts et labels générés par le modèle.
+
+## Problème
+
+En imagerie médicale, l'annotation experte est coûteuse et lente. Entraîner uniquement sur 100 exemples limite la généralisation, mais attribuer aveuglément des pseudo-labels peut amplifier les premières erreurs du modèle.
+
+Il fallait donc mesurer la qualité des représentations et des clusters, conserver une évaluation indépendante et contrôler la confiance ainsi que l'équilibre des pseudo-labels ajoutés à chaque itération.
+
+## Solution
+
+J'ai organisé le pipeline en cinq notebooks. Après l'exploration, un ResNet-18 pré-entraîné et gelé extrait les embeddings. PCA et t-SNE servent à projeter ces features; K-Means et DBSCAN produisent des regroupements comparés aux 100 labels experts avec l'Adjusted Rand Index.
+
+J'ai ensuite entraîné une baseline supervisée et une approche semi-supervisée sur labels faibles puis labels forts. Un dernier notebook applique un pseudo-labeling itératif : le seuil de confiance monte de 0,70 à 0,99, avec au plus 50 nouvelles images par classe et par tour. Le jeu labellisé passe ainsi de 80 exemples d'entraînement à 510, tout en limitant les ajouts déséquilibrés.
+
+## Architecture
+
+```text
+100 IRM labellisées + 1 400 non labellisées
+                   │
+         preprocessing 512 × 512
+                   │
+        ResNet-18 gelé → embeddings
+                   │
+       PCA / t-SNE → K-Means / DBSCAN
+                   │
+       labels faibles + labels experts
+                   │
+ CNN supervisé / semi-supervisé
+                   │
+ pseudo-labeling itératif par confiance
+```
+
+Les jeux fortement et faiblement labellisés restent identifiables durant tout le pipeline. L'évaluation s'effectue sur un split tenu à l'écart des étapes de génération de labels.
+
+## Déploiement
+
+Ce projet est une étude de recherche livrée sous forme de notebooks Jupyter ordonnés, pas un outil médical déployé. L'environnement Python se recrée avec `requirements.txt`, puis les notebooks 1 à 5 sont exécutés dans l'ordre.
+
+Les modèles intermédiaires, métriques et visualisations servent à comparer les protocoles. Toute utilisation clinique demanderait une validation externe, davantage de données représentatives et un cadre réglementaire absent de ce POC académique.
+
+## Impact
+
+Parmi les clusterings testés, K-Means sur la projection PCA obtient le meilleur ARI mesuré, 0,3304 : le signal existe, mais reste trop faible pour considérer les clusters comme des annotations expertes. Cette mesure a évité de surinterpréter des visualisations apparemment bien séparées.
+
+La baseline supervisée atteint un F1 de 0,9327 sur le jeu d'évaluation du notebook. Le pseudo-labeling itératif fait progresser le meilleur F1 de 0,8990 avec 80 images à 0,9499 après le premier enrichissement à 180 images; les tours suivants n'améliorent plus ce record. Ce plateau donne une information aussi utile que le gain initial : ajouter davantage de labels auto-générés ne garantit pas une meilleure généralisation.
+
+## Apprentissage
+
+J'ai appris à séparer trois questions souvent confondues : les embeddings structurent-ils les données, les clusters correspondent-ils aux classes médicales, et les labels faibles améliorent-ils réellement le classifieur ? Chaque question exige sa propre métrique.
+
+Le pseudo-labeling m'a aussi montré le risque de biais de confirmation. Les seuils progressifs, les quotas par classe et le maintien d'un test indépendant sont essentiels pour que le modèle ne se contente pas de renforcer ses propres certitudes.

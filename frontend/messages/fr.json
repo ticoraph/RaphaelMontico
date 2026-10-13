@@ -1,0 +1,58 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "proxp": "Parcours",
+    "perxp": "Projets personnels",
+    "schoolprojects": "Projets académiques",
+    "diplomas": "Formation",
+    "chat": "Assistant IA"
+  },
+  "proxp": {
+    "title": "Parcours",
+    "backToList": "Retour au Parcours"
+  },
+  "perxp": {
+    "title": "Projets personnels",
+    "backToList": "Retour aux Projets personnels"
+  },
+  "schoolprojects": {
+    "title": "Projets académiques",
+    "backToList": "Retour aux Projets académiques"
+  },
+  "diplomas": {
+    "title": "Formation",
+    "backToList": "Retour à Formation"
+  },
+  "chat": {
+    "title": "Assistant IA",
+    "intro": "Posez vos questions sur le parcours, les projets et les choix techniques de Raphaël. Les réponses s'appuient sur le contenu réel du portfolio, avec citations des sources.",
+    "placeholder": "Posez une question...",
+    "send": "Envoyer",
+    "thinking": "Réflexion...",
+    "sources": "Sources :",
+    "metricRetrieval": "recherche",
+    "metricGeneration": "génération",
+    "errorMessage": "Une erreur est survenue. Veuillez réessayer.",
+    "rateLimited": "Trop de questions en peu de temps. Réessayez dans une minute.",
+    "disclaimer": "Réponses générées par IA à partir du contenu du portfolio — elles peuvent contenir des erreurs.",
+    "suggestion1": "Comment est architecturé le système RAG de ce site (retrieval, embeddings, LLM) ?",
+    "suggestion2": "Quels agents IA a-t-il développés ?",
+    "suggestion3": "A-t-il déjà déployé un modèle de ML en production ?",
+    "suggestion4": "Quelle formation l'a spécialisé en IA / data science ?",
+    "suggestion5": "A-t-il de l'expérience avec des LLM open-source comme Qwen3 ?",
+    "systemPromptSummary": "Voir le prompt système utilisé pour générer les réponses",
+    "systemPromptNote": "Prompt système réel du backend (RAG), inséré avant le contexte récupéré par recherche vectorielle et la question de l'utilisateur — laissé en français, tel que défini dans le code.",
+    "exampleChunkSummary": "Voir un exemple de chunk récupéré par la recherche vectorielle",
+    "exampleChunkNote": "Chaque chunk correspond à une section du contenu du site, indexée avec son embedding ; c'est ce format qui alimente le contexte du prompt ci-dessus.",
+    "indexLastUpdated": "La base vectorielle a été mise à jour le {date}"
+  },
+  "footer": {
+    "rights": "Tous droits réservés."
+  },
+  "locale": {
+    "switch": "Changer de langue"
+  },
+  "home": {
+    "photoAlt": "Portrait de Raphaël Montico"
+  }
+}

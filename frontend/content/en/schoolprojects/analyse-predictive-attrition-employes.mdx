@@ -1,0 +1,60 @@
+---
+title: "Predictive Analysis of Employee Attrition"
+slug: "analyse-predictive-attrition-employes"
+tags: ["Python", "Machine Learning", "Classification", "Scikit-learn", "CatBoost", "XGBoost", "SHAP", "HR Analytics", "SMOTE"]
+overview: "Classification pipeline that combines three HR data sources, predicts employee departures, and explains risk factors with SHAP."
+---
+
+# Predictive Analysis of Employee Attrition
+
+## Context
+
+For this HR Analytics project, I worked on employee departures at an IT services company. Three files described different facets of the same workforce: HRIS data, a satisfaction survey, and performance evaluations. My goal was to bring these signals together to produce an analysis that HR could understand and a model capable of identifying at-risk profiles.
+
+## Problem
+
+The target class — employees who had left the company — was underrepresented. High accuracy could therefore hide a model unable to detect departures. The data also contained categorical, ordinal, and numerical variables that could not be prepared in the same way.
+
+I also needed to explain the predictions. In an HR context, a score without contributing factors is difficult to use and can encourage opaque decisions.
+
+## Solution
+
+I organized the work into three sequential notebooks. The first joins the sources using employee IDs, cleans the data, and builds composite indicators for income, the work environment, mobility, and work-life balance. The second applies the appropriate encoding to each variable and uses Pearson and Spearman correlations to guide feature selection.
+
+The final notebook compares a `DummyClassifier`, logistic regression, XGBoost, and CatBoost. I integrated SMOTE or undersampling into `imblearn` pipelines so that rebalancing only takes place on the training data. Cross-validation, confusion matrices, ROC/Precision-Recall curves, permutation importance, and SHAP complete the comparison.
+
+## Architecture
+
+```text
+HRIS ─┐
+Survey ─┼─ join + EDA → composite indicators
+Evaluations ─┘                         │
+                                      ▼
+                         encoding + selection
+                                      │
+                                      ▼
+         classification pipelines + rebalancing
+                                      │
+                                      ▼
+             cross-validation + SHAP + exports
+```
+
+Each notebook exports the CSV consumed by the next one. Reports and charts are grouped by run in `exports/` and `images/`, preserving the results without mixing pipeline stages.
+
+## Deployment
+
+This project is a Data Science study delivered as notebooks, not a production API. The environment can be recreated with Python 3.13 and `uv`; execution follows the order of analysis, feature engineering, and modeling.
+
+The reference `FINAL` run contains classification reports, confusion matrices, curves, feature importances, and SHAP charts. This delivery format is suited to presenting findings to HR: it prioritizes auditing transformations and interpreting the model.
+
+## Impact
+
+On the reference test set, CatBoost achieves 86% accuracy but only 61% recall for the departure class. XGBoost achieves 83% accuracy and 83% recall for this class, at the cost of more false positives. Logistic regression also achieves 83% recall, with a minority-class F1 score of 0.52.
+
+These results make the business trade-off clear: CatBoost is more accurate overall, while XGBoost and logistic regression detect more potential departures. The train/test gaps also point to overfitting in the boosting models, an essential consideration before any operational use.
+
+## Learning
+
+I learned not to select an HR model based on a single metric. Minority-class recall, the cost of false positives, and cross-validation stability tell a more useful story than accuracy.
+
+SHAP also taught me to distinguish between global and individual explanations: knowing which variables are most important is not enough to understand why a specific employee receives a given score.

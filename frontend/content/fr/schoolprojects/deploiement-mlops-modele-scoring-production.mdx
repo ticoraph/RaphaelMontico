@@ -1,0 +1,66 @@
+---
+title: "Déploiement et monitoring d'un modèle de scoring"
+slug: "deploiement-mlops-modele-scoring-production"
+tags: ["Python", "FastAPI", "MLOps", "LightGBM", "Docker", "GitHub Actions", "Streamlit", "Data Drift", "Pytest"]
+overview: "Industrialisation d'un modèle LightGBM avec API unitaire et batch, image Docker multi-architecture, CI/CD et dashboard de dérive des données."
+---
+
+# Déploiement et monitoring d'un modèle de scoring
+
+## Contexte
+
+Après la phase de modélisation du credit scoring, j'ai construit `ReadyToSpendMonitor` pour traiter la suite du cycle de vie : servir le modèle, journaliser son comportement et détecter quand les données de production s'éloignent de l'entraînement.
+
+Le dépôt réunit une API FastAPI, un modèle LightGBM entraîné sur les 40 variables les plus importantes, un dashboard Streamlit et une chaîne CI/CD. Il fournit aussi un script qui rejoue un dataset contre l'API pour tester la charge et alimenter les journaux de démonstration.
+
+## Problème
+
+Un fichier `model.pkl` n'est pas un service. Il faut valider les entrées, charger le modèle efficacement, gérer les appels unitaires et batch, tracer les décisions et rendre les incidents observables. Même une API stable peut devenir moins fiable si les distributions des variables changent.
+
+Je devais donc couvrir à la fois la qualité logicielle et la qualité ML : tests, image reproductible, temps d'inférence, format de logs, référence d'entraînement et seuil statistique de drift.
+
+## Solution
+
+L'API charge une seule fois l'artefact LightGBM au démarrage et expose `/predict`, `/predict_batch` et `/health`. Pydantic valide les 40 features et plusieurs règles métier. Le batch parallélise les prédictions avec `ThreadPoolExecutor`; un mode `cProfile` peut produire des profils par requête.
+
+Chaque prédiction écrit une ligne JSON structurée avec horodatage, entrée, score, décision, confiance, latence et version du modèle. Le dashboard Streamlit compare ces observations au dataset de référence, affiche les volumes, temps d'inférence et répartitions de décisions, puis applique un test de Kolmogorov-Smirnov à chaque variable (`p-value < 0,01`).
+
+## Architecture
+
+```text
+Dataset Home Credit
+       │
+feature engineering + sélection top 40
+       │
+LightGBM + liste des features
+       │
+FastAPI ── /predict
+   │     └─ /predict_batch
+   │
+logs JSONL de production
+   │
+Streamlit
+   ├─ métriques opérationnelles
+   ├─ distributions référence/production
+   └─ alertes KS de data drift
+```
+
+Le conteneur utilise Supervisor pour lancer l'API, le dashboard et le job d'insertion de données. Le volume de logs reste monté depuis l'hôte afin de conserver l'historique.
+
+## Déploiement
+
+Le `Dockerfile` construit un environnement unique exposant FastAPI sur le port 8000 et Streamlit sur le port 8501. GitHub Actions installe les dépendances, exécute Pytest avec couverture, publie le rapport HTML puis construit avec Buildx une image `linux/amd64` et `linux/arm64`.
+
+Sur la branche principale, l'image est poussée sur Docker Hub avec les tags `latest` et SHA du commit. Les identifiants Docker restent dans les secrets GitHub. Le dépôt documente également un lancement local Uvicorn/Streamlit pour diagnostiquer chaque composant séparément.
+
+## Impact
+
+Le modèle devient consommable par un client unitaire ou par lot, avec une décision homogène au seuil métier de 0,2. Les journaux alimentent directement un tableau de bord qui montre nombre de prédictions, latence moyenne, distribution des scores, décisions récentes et variables en dérive.
+
+Le pipeline CI/CD transforme chaque changement validé en image multi-architecture traçable. La séparation entre référence d'entraînement et observations de production permet de détecter une dégradation potentielle avant d'attendre les labels réels.
+
+## Apprentissage
+
+J'ai appris que le monitoring ML commence par un contrat de données et des logs conçus à l'avance. Sans liste de features, version de modèle et référence comparable, une alerte de drift n'est pas exploitable.
+
+J'ai aussi distingué le data drift de la baisse de performance : le test KS signale un changement de distribution, pas une erreur du modèle. Il déclenche une investigation; il ne justifie pas à lui seul un réentraînement automatique.

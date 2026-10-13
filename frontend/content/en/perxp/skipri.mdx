@@ -1,0 +1,34 @@
+---
+title: "SkiPri.fr"
+slug: "skipri"
+order: 4
+tags: ["Next.js", "React", "FastAPI", "PostgreSQL", "AWS Cognito", "AWS S3", "CloudFront", "Python"]
+overview: "Ski pass price comparison platform across French resorts, featuring an automated scraping pipeline."
+---
+
+[SkiPri.com](https://SkiPri.fr) is a ski pass price comparison platform across French resorts, featuring a filtering interface to find the best deals and an administration area to manage resort data and monitor the scraping pipeline.
+
+This project covers the entire chain: automated data collection from multiple sources, secure backend API, and a static web interface deployed on AWS.
+
+# Features
+
+- Ski pass price comparison interface, filterable by resort
+- Administration area (AWS Cognito) to manage resort data and track the scraping pipeline
+- Automated data collection pipeline aggregating multiple sources
+- Secure REST API with server-side token validation
+
+# Architecture & Technologies
+
+- **Frontend**: Next.js 16 (React 19), Tailwind CSS 4, static export
+- **Backend**: FastAPI (Python), SQLAlchemy 2, PostgreSQL
+- **Authentication**: AWS Cognito
+- **Database**: PostgreSQL
+- **Data Collection**: Python scrapers (BeautifulSoup, pdfplumber, pandas, httpx)
+- **Hosting**: Frontend on S3 + CloudFront, backend on AWS
+
+# Key Highlights
+
+- Design of a multi-source scraping pipeline (PDF extraction, parsing, staging, and synchronization to canonical tables with resort name alias management)
+- Development of the FastAPI backend with Cognito authentication and clear separation between public read and administration
+- Database modeling for resorts, prices, and data sources
+- Setup of AWS infrastructure (S3, CloudFront) for high-performance static export

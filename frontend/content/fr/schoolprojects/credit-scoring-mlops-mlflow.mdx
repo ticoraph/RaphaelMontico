@@ -1,0 +1,66 @@
+---
+title: "Credit scoring orienté coût métier avec MLflow"
+slug: "credit-scoring-mlops-mlflow"
+tags: ["Python", "Machine Learning", "MLOps", "MLflow", "LightGBM", "XGBoost", "Scikit-learn", "Credit Scoring", "Optuna", "SMOTE"]
+overview: "Pipeline de scoring crédit qui agrège les données Home Credit, compare plusieurs classifieurs et optimise le seuil de décision selon un coût métier tracé dans MLflow."
+---
+
+# Credit scoring orienté coût métier avec MLflow
+
+## Contexte
+
+J'ai développé ce projet pour simuler le travail d'une société de crédit qui doit estimer le risque de défaut à partir du jeu de données Home Credit. Le dépôt couvre la préparation de plusieurs tables relationnelles, l'entraînement de modèles, l'optimisation d'hyperparamètres et le suivi des expériences.
+
+Mon objectif n'était pas seulement d'obtenir un bon ROC-AUC. Je voulais relier la décision du modèle à son effet financier et conserver assez de traces pour comparer honnêtement chaque expérience.
+
+## Problème
+
+Les informations d'un client sont réparties entre les demandes courantes, les crédits passés, les échéances, les cartes et les paiements. La cible est fortement déséquilibrée : un modèle peut afficher une bonne accuracy tout en refusant de détecter les défauts.
+
+Le seuil standard de 0,5 pose aussi problème. Un faux négatif — accorder un crédit à un client qui fera défaut — ne coûte pas la même chose qu'un faux positif — refuser un client solvable. La sélection du modèle devait donc intégrer ce coût asymétrique.
+
+## Solution
+
+J'ai construit un premier notebook qui agrège les tables `bureau`, `previous_application`, `POS_CASH_balance`, `installments_payments` et `credit_card_balance`, encode les catégories puis produit un dataset client unique. Le pipeline canonique dans `main.py` sépare ensuite les données de façon stratifiée, impute les valeurs manquantes et standardise uniquement les modèles qui en ont besoin.
+
+J'ai comparé régression logistique, Random Forest, XGBoost, LightGBM et MLP. Les hyperparamètres peuvent être recherchés par GridSearchCV, RandomizedSearchCV ou Optuna. Le déséquilibre est traité par pondération des classes ou SMOTE, appliqué après le split pour éviter la fuite de données. Enfin, une fonction parcourt les seuils et calcule le coût des faux positifs et faux négatifs.
+
+## Architecture
+
+```text
+7 tables Home Credit
+        │
+agrégations + jointures + encodage
+        │
+dataset client / TARGET
+        │
+split stratifié + imputation
+        │
+LR │ RF │ XGBoost │ LightGBM │ MLP
+        │
+GridSearch / RandomizedSearch / Optuna
+        │
+métriques + coût métier par seuil
+        │
+MLflow : paramètres, modèles, courbes, importances
+```
+
+MLflow centralise les paramètres, métriques, artefacts et modèles. Le dépôt enregistre aussi les matrices de confusion, courbes Precision-Recall et importances globales ou locales.
+
+## Déploiement
+
+Ce dépôt correspond à l'étape d'expérimentation et de sélection du modèle. MLflow utilise un backend SQLite et un répertoire d'artefacts local; son interface permet de comparer les runs. Une commande dédiée exporte ensuite un modèle suivi vers `model.pkl` pour préparer son intégration dans un service.
+
+La reproductibilité repose sur un script canonique, des paramètres regroupés en tête de fichier et des expériences nommées selon l'usage ou non de SMOTE. L'API et le monitoring sont traités dans le projet MLOps suivant, plutôt que mélangés à ce dépôt de modélisation.
+
+## Impact
+
+Le pipeline fournit une comparaison homogène de cinq familles de modèles et de trois stratégies d'optimisation. Surtout, il produit pour chaque seuil le rappel, la précision et le coût financier estimé, puis journalise dans MLflow le seuil qui maximise le résultat métier.
+
+Cette approche rend la recommandation défendable : le meilleur modèle statistique n'est pas automatiquement celui qui protège le mieux la marge de l'entreprise. Le dépôt produit également un artefact versionnable, prêt à être consommé par une API de scoring.
+
+## Apprentissage
+
+J'ai appris à traiter le seuil de classification comme un paramètre métier, pas comme une constante imposée par la bibliothèque. Ce déplacement change la conversation : on ne choisit plus seulement entre ROC-AUC et F1, on mesure le prix des erreurs.
+
+MLflow m'a également montré la valeur d'une expérimentation structurée. Sans historique des données, paramètres et artefacts, une amélioration apparente reste difficile à reproduire ou à expliquer.

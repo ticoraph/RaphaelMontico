@@ -1,0 +1,64 @@
+---
+title: "Deployment of a Machine Learning model with FastAPI"
+slug: "deploiement-modele-machine-learning-fastapi"
+tags: ["Python", "FastAPI", "REST API", "PostgreSQL", "Supabase", "SQLAlchemy", "Pytest", "GitHub Actions", "XGBoost"]
+overview: "Transformation of a churn classifier into an authenticated, tested FastAPI API connected to PostgreSQL to log requests and predictions."
+---
+
+# Deploying a Machine Learning Model with FastAPI
+
+## Context
+
+With `FuturisysPOC`, I took an XGBoost resignation prediction model and made it available as a proper service. The goal was no longer to explore the causes of attrition, but to wrap the model in a stable interface that other applications could call.
+
+The project put me in the role of a Machine Learning Engineer: API contract, authentication, validation, request persistence, testing, and version management.
+
+## Problem
+
+The classifier had been trained on three merged and encoded HR data sources. To use it outside a notebook, I needed to ensure that incoming features matched those expected, return clear errors, and track what happened to the model.
+
+A prediction API also handles sensitive data. Even in a POC, it could not expose the model freely or embed database secrets in the code.
+
+## Solution
+
+I created a FastAPI application with three main routes: `/health` for availability, `/model` for classifier metadata, and `/predict` for inference. The two business routes are protected by a key passed in `X-API-Key`; Pydantic validates the request body.
+
+The XGBClassifier model is loaded from a Joblib artifact. SQLAlchemy connects the API to a PostgreSQL database hosted on Supabase. The `requests` table stores features, HTTP status, and date; `predictions` records successful inferences along with their result and latency; `dataset` holds the training data. Scripts create the tables, import the dataset, and export the schema.
+
+## Architecture
+
+```text
+Client
+  │ X-API-Key + JSON
+  ▼
+FastAPI
+  ├─ validation Pydantic
+  ├─ modèle XGBoost Joblib
+  └─ SQLAlchemy
+         │
+         ▼
+PostgreSQL / Supabase
+  ├─ requests
+  ├─ predictions
+  └─ dataset
+```
+
+The `src/model`, `src/db`, and `src/test` modules isolate the ML artifact, persistence, and service validation, respectively. This organization avoids concentrating training, API, and data access in a single file.
+
+## Deployment
+
+The application runs under Uvicorn with Python 3.12. All configuration—PostgreSQL URL, API key, model path, host, and port—comes from environment variables. Swagger provides interactive documentation at `/docs`.
+
+The GitHub Actions workflow runs linting and tests on a push to the development branch, creates a pull request to the main branch, and then produces a versioned tag. The README documents Render as a suitable target without claiming that permanent public hosting is part of the repository.
+
+## Impact
+
+The model can now be used through an HTTP contract rather than imported into a notebook. Every call is authenticated, validated, and tracked in the database; successful predictions are kept separate from failed requests, making diagnosis easier.
+
+Pytest tests and coverage safeguard essential behavior before a version is created. The PostgreSQL schema and administration scripts also make the POC easier to hand over to another developer.
+
+## Learning
+
+I learned that operationalizing a model is primarily about stabilizing its interfaces: input schema, responses, errors, authentication, and observability. A high-quality classifier cannot compensate for an ambiguous API contract.
+
+This project also familiarized me with separating secrets from configuration, the SQLAlchemy ORM, and the difference between testing a prediction function and testing the complete behavior of an endpoint.
