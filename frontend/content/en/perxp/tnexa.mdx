@@ -2,36 +2,38 @@
 title: "TneXa.fr"
 slug: "tnexa"
 order: 5
-tags: ["Astro", "MDX", "TypeScript", "Cloudflare Workers", "Wrangler", "GitHub Actions", "Accessibilité", "Sécurité"]
-overview: "Static showcase website for TneXa, designed to present its applied artificial intelligence offering, products, projects, and R&D work."
+tags: ["Astro", "MDX", "TypeScript", "Cloudflare Workers", "Wrangler", "GitHub Actions", "Mobile First", "Accessibilité", "Sécurité"]
+overview: "Static showcase website for TneXa, which designs AI Native products: one platform (TneGa), five live implementations, and four R&D projects, presented in a restrained style that fits on one screen on desktop."
 ---
 
-# TneXa.fr: showcasing an AI business
+# TneXa.fr: showcasing an AI Native product business
 
 ## Context
 
-[TneXa.fr](https://tnexa.fr) is the website for TneXa, my applied AI consulting and development practice, specializing in artificial intelligence systems connected to business data and tools: generative AI, agents, automation, data engineering, and machine learning.
+[TneXa.fr](https://tnexa.fr) is the website for TneXa, my business designing "AI Native" AI products: systems connected to data, built on machine learning, vision models, LLMs, agents, and automation.
 
-The site needs to make this offering easy to understand, introduce TneGa — a platform of agents deployed in the client’s environment — and connect the company’s positioning to existing live implementations and several research and development projects.
+The site needs to show this expertise through concrete projects rather than promises. It presents TneGa, an agent platform installed in the client’s environment, five implementations that are already live, and four research and development projects. The home page lays out the approach in three ideas: AI at the core of the product, data at the center of the architecture, and continuous innovation.
 
 ## Problem
 
-The original React/Vite foundation was too generic for a primarily editorial website. Routing, metadata management, and content organization would have had to be built manually, even though the intended product requires neither an API, a database, nor a server-side form.
+The original React/Vite foundation was too generic for a primarily editorial website. Routing, metadata management, and content organization would have had to be built manually, even though the site needs neither an API nor a database.
 
-The other challenge was editorial: bringing together areas of expertise, a product range, implementations, and exploratory projects without making the site feel like a disparate catalog. The site needed to remain fast, accessible, and easy to evolve, while being deliberately closed to search engines and AI crawlers during this phase.
+The other challenge was editorial: the first version stacked expertise pages, pricing, a contact form, and a sales funnel for a business that had none of that to publish. The site needed to say what actually exists, remain fast, accessible, and easy to evolve, and stay deliberately closed to search engines and AI crawlers during this phase.
 
 ## Solution
 
-I replaced the initial foundation with Astro 7 in static mode. Highly structured pages are written in `.astro`, editorial content in MDX, and shared information — navigation, descriptions, products, and external links — is centralized in a TypeScript registry.
+I replaced the initial foundation with Astro 7 in static mode. Highly structured pages are written in `.astro`, editorial content in MDX, and shared information — name, email, description, and navigation — is centralized in a single TypeScript configuration file that the list pages build their cards from.
 
-Reusable layouts and components handle the page structure, cards, method steps, and calls to action. The user journey starts with customer problems and outcomes, then presents three areas of expertise, the TneGa product, five implementations, and four R&D projects. The absence of a form and server-side code reduces maintenance and the attack surface.
+The site was then tightened. The Expertise, Pricing, and Contact pages and the form were removed, and the menu now has three entries: Projects, Products, and Research & Development. Every project page follows the same template: a short introductory paragraph, a data table (technologies, hosting, access), and links to the site or the public repository. R&D pages also show a five-phase cycle — Imagine, Define, Develop, Implement, Launch — with the current phase highlighted. A project that is still at the study stage is presented as such, without promising anything that has not been built.
+
+The visual identity stays restrained: ink and paper with lime and mint accents, driven by CSS variables. The home page carries three SVG illustrations animated in CSS, which respect `prefers-reduced-motion`. The CSS is written Mobile First, starting at 360 px, with touch targets of at least 44 px.
 
 ## Architecture
 
 ```text
 TypeScript configuration ── navigation and metadata
           │
-Astro pages + MDX content
+Astro pages + MDX content ── home and project page templates
           │
 Reusable layouts and components
           │
@@ -44,22 +46,22 @@ Cloudflare Workers Static Assets
        tnexa.fr
 ```
 
-The `robots.txt`, `_headers`, and metadata files keep crawlers out. The headers also add a Content Security Policy, prohibit iframe embedding, set a permissions policy, and apply a long cache strategy for versioned assets.
+The `robots.txt`, `_headers`, and metadata files keep crawlers out. The headers also add a strict Content Security Policy, prohibit iframe embedding, set a permissions policy, and apply a long cache strategy for versioned assets. Any new external resource must be explicitly allowed in these headers. There is no sitemap, no form, and no server-side code.
 
 ## Deployment
 
-GitHub Actions runs `astro check` and then builds on every proposed change. A validated push to `main` then triggers `wrangler deploy`; the GitHub `production` environment can require human approval before publication.
+GitHub Actions runs `astro check` and then builds on every proposed change. A validated push to `main` then triggers the deployment with Wrangler; the GitHub `production` environment can require human approval before publication.
 
-Cloudflare manages DNS and serves the static files through Workers Static Assets. OVHcloud remains the registrar and hosts the `contact@tnexa.fr` mailbox, so the DNS migration preserves the MX, SPF, and DKIM records, which never pass through the Cloudflare proxy. No application secrets or persistent services are required to run the site.
+Cloudflare manages DNS and serves the static files through Workers Static Assets. OVHcloud remains the registrar and hosts the `contact@tnexa.fr` mailbox, so the DNS migration preserves the MX, SPF, and DKIM records, which never pass through the Cloudflare proxy. No application secrets or persistent services are required to run the site; only the Cloudflare token and account ID are used for deployment.
 
 ## Impact
 
-The site now brings together three areas of expertise, TneGa, five implementations, and four R&D focus areas under a consistent identity. Content can be edited in MDX without touching the components, while repeated elements remain managed through a single configuration.
+The site brings together one platform, five implementations, and four R&D focus areas under a consistent identity. Content can be edited in MDX without touching the components, while repeated elements remain managed through a single configuration: adding a project means creating one file and one configuration line.
 
-The static architecture provides fast pages that are inexpensive to host and independent of a backend. Indexing is blocked at several levels — `robots.txt`, HTTP headers, and metadata — rather than relying on a single convention that crawlers follow inconsistently.
+The static architecture provides fast pages that are inexpensive to host and independent of a backend. Project pages and lists fit on one screen on desktop, and the site remains usable with a keyboard, with a skip link and visible focus. Indexing is blocked at several levels — `robots.txt`, HTTP headers, and metadata — rather than relying on a single convention that crawlers follow inconsistently.
 
 ## What I Learned
 
-This project taught me to choose an architecture proportionate to the need. A content website does not need a permanent application runtime: Astro and MDX provide the editorial framework, typing, and reusability required without introducing an unnecessary server.
+This project taught me to choose an architecture proportionate to the need. A content site does not need a permanent application runtime: Astro and MDX provide the editorial framework, typing, and reuse required without introducing an unnecessary server.
 
-Going live also reminded me that deploying a website involves more than publishing files. DNS changes must preserve email, security headers are part of the product, and an indexing policy must be explicit at every delivery layer.
+It also taught me to remove more than I add. Deleting pages, a form, and taglines made the site clearer than any new section could have, and keeping a decision log avoids reopening the same debates. Finally, going live is a reminder that deploying a site is more than publishing files: the DNS change must preserve email, security headers are part of the product, and a no-indexing policy must be explicit at every delivery layer.
