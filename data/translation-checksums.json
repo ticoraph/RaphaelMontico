@@ -3,85 +3,85 @@
   "files": {
     "messages/fr.json": {
       "checksum": "b9b96c51f8b076d8689b151540ba26cadd6c3b56e84801d5a4e401da6af5a853",
-      "translatedAt": "2026-10-13T17:41:04.277Z",
+      "translatedAt": "2026-10-27T16:02:16.484Z",
       "enFile": "messages/en.json",
       "status": "up-to-date"
     },
     "content/fr/proxp/access.mdx": {
       "checksum": "b2d6d325d3efcc17ba7362a52e82c1b8868f2db2739ab488153926f684110ebf",
-      "translatedAt": "2026-10-13T17:41:04.267Z",
+      "translatedAt": "2026-10-27T16:02:16.476Z",
       "enFile": "content/en/proxp/access.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/bechtle.mdx": {
       "checksum": "57f18751c302dbe9ff2d5bf70b4352da81dcfcb3f96938f714057666fd54b786",
-      "translatedAt": "2026-10-13T17:41:04.267Z",
+      "translatedAt": "2026-10-27T16:02:16.476Z",
       "enFile": "content/en/proxp/bechtle.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/bourbaki.mdx": {
       "checksum": "595155d0cc83bfb25618f5086239bfc66c9e1f87a9d5a9d271c876649b2bba1c",
-      "translatedAt": "2026-10-13T17:41:04.268Z",
+      "translatedAt": "2026-10-27T16:02:16.477Z",
       "enFile": "content/en/proxp/bourbaki.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/geodis.mdx": {
       "checksum": "b70013d47172f3545665cda034a7afc4f53428ca9b67f18e13e6887dec06b932",
-      "translatedAt": "2026-10-13T17:41:04.268Z",
+      "translatedAt": "2026-10-27T16:02:16.477Z",
       "enFile": "content/en/proxp/geodis.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/info-solutions-2s.mdx": {
       "checksum": "f5bbad9745b8f9c956b9c2c78280123b9295f98e6b5ad79e799e8fe1a76da15a",
-      "translatedAt": "2026-10-13T17:41:04.268Z",
+      "translatedAt": "2026-10-27T16:02:16.477Z",
       "enFile": "content/en/proxp/info-solutions-2s.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/malraux.mdx": {
       "checksum": "7825ebed2c144a9e88ca5bf27a396355c123e3f44a4ee52eda91ce7e3323455e",
-      "translatedAt": "2026-10-13T17:41:04.268Z",
+      "translatedAt": "2026-10-27T16:02:16.477Z",
       "enFile": "content/en/proxp/malraux.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/protiel.mdx": {
-      "checksum": "d8501e8b9ef600b5a51a1c0758a382b4ff8fda21041cb62de4854cd3bdaee2bf",
-      "translatedAt": "2026-10-13T17:41:04.269Z",
+      "checksum": "57516419218a7d3a0e94276eaf81ec06ae24e4145b95dcec15faa5575a2335e6",
+      "translatedAt": "2026-10-27T16:02:16.478Z",
       "enFile": "content/en/proxp/protiel.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/record-assa-abloy.mdx": {
       "checksum": "8b4505a50db22a129d8e6ceb5fbe0c0874f58a33f455c06a601adfcc041c55b8",
-      "translatedAt": "2026-10-13T17:41:04.269Z",
+      "translatedAt": "2026-10-27T16:02:16.480Z",
       "enFile": "content/en/proxp/record-assa-abloy.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/sftrf.mdx": {
       "checksum": "606e2372d4f84cb514feec38ee1e5c9c916e2ddc718c21f4d612323fcc723d96",
-      "translatedAt": "2026-10-13T17:41:04.272Z",
+      "translatedAt": "2026-10-27T16:02:16.480Z",
       "enFile": "content/en/proxp/sftrf.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/starnight.mdx": {
       "checksum": "92adfb321a6d788e96ca738505c29254a32c0f7e7c0294a1de18033b887b98dd",
-      "translatedAt": "2026-10-13T17:41:04.272Z",
+      "translatedAt": "2026-10-27T16:02:16.480Z",
       "enFile": "content/en/proxp/starnight.mdx",
       "status": "up-to-date"
     },
     "content/fr/perxp/pulpfiction.mdx": {
       "checksum": "843749754767b8a132bdca3774907b0e555aec907b61b28aea4a363a62bbfdf7",
-      "translatedAt": "2026-10-13T17:41:04.272Z",
+      "translatedAt": "2026-10-27T16:02:16.480Z",
       "enFile": "content/en/perxp/pulpfiction.mdx",
       "status": "up-to-date"
     },
     "content/fr/perxp/raphaelmontico.mdx": {
       "checksum": "dc5c24878f32c7d38f158bb8587468d598058b1013a5f027ef75541aefd225b1",
-      "translatedAt": "2026-10-13T17:41:04.273Z",
+      "translatedAt": "2026-10-27T16:02:16.481Z",
       "enFile": "content/en/perxp/raphaelmontico.mdx",
       "status": "up-to-date"
     },
     "content/fr/perxp/skipri.mdx": {
       "checksum": "294b8d3c4deee0a71f074b587a02e6552799f3e0e104edfb3e711cc93259c5a5",
-      "translatedAt": "2026-10-13T17:41:04.273Z",
+      "translatedAt": "2026-10-27T16:02:16.481Z",
       "enFile": "content/en/perxp/skipri.mdx",
       "status": "up-to-date"
     },
@@ -93,148 +93,148 @@
     },
     "content/fr/diplomas/baccalaureat.mdx": {
       "checksum": "6cec27c6e350108bf8dd70877d60689f32b712626badc90710f8b87a9d94790c",
-      "translatedAt": "2026-10-13T17:41:04.274Z",
+      "translatedAt": "2026-10-27T16:02:16.481Z",
       "enFile": "content/en/diplomas/baccalaureat.mdx",
       "status": "up-to-date"
     },
     "content/fr/diplomas/formation-cesi.mdx": {
       "checksum": "2018ad972917e6b4da88d10cb9f8050ed0ee32aaef4da7555958f228ec8478ef",
-      "translatedAt": "2026-10-13T17:41:04.274Z",
+      "translatedAt": "2026-10-27T16:02:16.481Z",
       "enFile": "content/en/diplomas/formation-cesi.mdx",
       "status": "up-to-date"
     },
     "content/fr/diplomas/licence-professionnelle.mdx": {
       "checksum": "ecc59727d2eb8ffe188174fc39aac64be462dad7993d5749f53457de2769ba86",
-      "translatedAt": "2026-10-13T17:41:04.274Z",
+      "translatedAt": "2026-10-27T16:02:16.481Z",
       "enFile": "content/en/diplomas/licence-professionnelle.mdx",
       "status": "up-to-date"
     },
     "content/fr/diplomas/master.mdx": {
       "checksum": "bed4fb871ee96108e3635325ecd3db47ffc3f091153589f3d609111a84f8823a",
-      "translatedAt": "2026-10-13T17:41:04.274Z",
+      "translatedAt": "2026-10-27T16:02:16.481Z",
       "enFile": "content/en/diplomas/master.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/agent-ia-apprentissage-echecs.mdx": {
       "checksum": "88efb299cb76bfad8ab1b52d4e3caaf31aa3bd259a975d95276e54403412cef5",
-      "translatedAt": "2026-10-13T17:41:04.274Z",
+      "translatedAt": "2026-10-27T16:02:16.482Z",
       "enFile": "content/en/schoolprojects/agent-ia-apprentissage-echecs.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/agent-ia-triage-medical-qwen3.mdx": {
       "checksum": "f0b0ab9e9b4ede9a58fea66540f5ac2bef17e70e0dbaf148587261abb3dd0874",
-      "translatedAt": "2026-10-13T17:41:04.275Z",
+      "translatedAt": "2026-10-27T16:02:16.482Z",
       "enFile": "content/en/schoolprojects/agent-ia-triage-medical-qwen3.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/analyse-predictive-attrition-employes.mdx": {
       "checksum": "853388b246fb918fe0298931fc5bf520ce717053528eaed814b55611fa72176d",
-      "translatedAt": "2026-10-13T17:41:04.275Z",
+      "translatedAt": "2026-10-27T16:02:16.482Z",
       "enFile": "content/en/schoolprojects/analyse-predictive-attrition-employes.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/cadrage-projet-ia-recommandation-mode.mdx": {
       "checksum": "9fbbf0509c107d80f178d99677d07ec8a221737ecc9f44d3ae68184821488c3b",
-      "translatedAt": "2026-10-13T17:41:04.275Z",
+      "translatedAt": "2026-10-27T16:02:16.482Z",
       "enFile": "content/en/schoolprojects/cadrage-projet-ia-recommandation-mode.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/conduite-projet-data-portfolio-ai-engineer.mdx": {
       "checksum": "1b1c62d038d1c8b17648f79a835af257e90e91a1ad354f600391b4842d3225cb",
-      "translatedAt": "2026-10-13T17:41:04.276Z",
+      "translatedAt": "2026-10-27T16:02:16.482Z",
       "enFile": "content/en/schoolprojects/conduite-projet-data-portfolio-ai-engineer.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/credit-scoring-mlops-mlflow.mdx": {
       "checksum": "7a1e38ca3d387107d89017dd2aefb36de2024ec6580ee13ba5dd0b567a2b4039",
-      "translatedAt": "2026-10-13T17:41:04.276Z",
+      "translatedAt": "2026-10-27T16:02:16.483Z",
       "enFile": "content/en/schoolprojects/credit-scoring-mlops-mlflow.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/deploiement-mlops-modele-scoring-production.mdx": {
       "checksum": "cb43e1a88d657a2d4e11a14829d218b5983216eb68347089c9ed9fa496441b6f",
-      "translatedAt": "2026-10-13T17:41:04.276Z",
+      "translatedAt": "2026-10-27T16:02:16.483Z",
       "enFile": "content/en/schoolprojects/deploiement-mlops-modele-scoring-production.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/deploiement-modele-machine-learning-fastapi.mdx": {
       "checksum": "a53c5f84007ce226779f809dc0958e01c53cf7ae6b22c4d9f43fe0a45bde90d2",
-      "translatedAt": "2026-10-13T17:41:04.276Z",
+      "translatedAt": "2026-10-27T16:02:16.483Z",
       "enFile": "content/en/schoolprojects/deploiement-modele-machine-learning-fastapi.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/entrainement-agent-rl-lunar-lander.mdx": {
       "checksum": "9d201de4e7abd86b5cde44a6a5b45adfa5f08abeba808e47abc3326f73d9fc65",
-      "translatedAt": "2026-10-13T17:41:04.276Z",
+      "translatedAt": "2026-10-27T16:02:16.483Z",
       "enFile": "content/en/schoolprojects/entrainement-agent-rl-lunar-lander.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/labellisation-semi-supervisee-imagerie-medicale.mdx": {
       "checksum": "26f32e626747d482eded2d94284123010264b465cd6e7783f6926412581814de",
-      "translatedAt": "2026-10-13T17:41:04.276Z",
+      "translatedAt": "2026-10-27T16:02:16.483Z",
       "enFile": "content/en/schoolprojects/labellisation-semi-supervisee-imagerie-medicale.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/pipeline-extraction-donnees-multimodales-fake-news.mdx": {
       "checksum": "3d6b406ff836770c0be1a7cfae75f4ca596b75b0eb7cfd0f7baf4ca457eb0624",
-      "translatedAt": "2026-10-13T17:41:04.276Z",
+      "translatedAt": "2026-10-27T16:02:16.483Z",
       "enFile": "content/en/schoolprojects/pipeline-extraction-donnees-multimodales-fake-news.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/prediction-consommation-energetique-batiments.mdx": {
       "checksum": "1cea42d830376dae0aeb923bc1428c1d6a7eb9136f4fba9ea90c7a85f6c944fd",
-      "translatedAt": "2026-10-13T17:41:04.277Z",
+      "translatedAt": "2026-10-27T16:02:16.483Z",
       "enFile": "content/en/schoolprojects/prediction-consommation-energetique-batiments.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/segmentation-vestimentaire-hugging-face.mdx": {
       "checksum": "25c4802bf2ad369f7d6ac035e8f793204c30e369ff0d83602028da2f17148fb1",
-      "translatedAt": "2026-10-13T17:41:04.277Z",
+      "translatedAt": "2026-10-27T16:02:16.484Z",
       "enFile": "content/en/schoolprojects/segmentation-vestimentaire-hugging-face.mdx",
       "status": "up-to-date"
     },
     "content/fr/schoolprojects/systeme-rag-recommandation-evenements-culturels.mdx": {
       "checksum": "73409422280977d7400b456103bd3a7c7a450788622fb923459c7bdef7c17fb5",
-      "translatedAt": "2026-10-13T17:41:04.277Z",
+      "translatedAt": "2026-10-27T16:02:16.484Z",
       "enFile": "content/en/schoolprojects/systeme-rag-recommandation-evenements-culturels.mdx",
       "status": "up-to-date"
     },
     "content/fr/home.mdx": {
       "checksum": "e61ca91406d06215bb7d4d8e9c492acfdde45dae9b4d2978321de140d0d2563f",
-      "translatedAt": "2026-10-13T17:41:04.258Z",
+      "translatedAt": "2026-10-27T16:02:16.474Z",
       "enFile": "content/en/home.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/master-openclassrooms.mdx": {
       "checksum": "04ba427ee0c3fa714001c1b4c2018ace567bfe3d84742b4b2e10fe9afe41c031",
-      "translatedAt": "2026-10-13T17:41:04.269Z",
+      "translatedAt": "2026-10-27T16:02:16.478Z",
       "enFile": "content/en/proxp/master-openclassrooms.mdx",
       "status": "up-to-date"
     },
     "content/fr/perxp/surpri.mdx": {
       "checksum": "807f8cca4c854de51aa2d3471d4da2af38bf5553167a657ce0057be7484a230a",
-      "translatedAt": "2026-10-13T17:41:04.273Z",
+      "translatedAt": "2026-10-27T16:02:16.481Z",
       "enFile": "content/en/perxp/surpri.mdx",
       "status": "up-to-date"
     },
     "content/fr/perxp/tnexa.mdx": {
-      "checksum": "edbc94d7fe1aebf3bf39886e778c38e26d91787915e4850840d4d5a9566a6cc9",
-      "translatedAt": "2026-10-13T17:41:04.273Z",
+      "checksum": "a4bb14c29556f8c762d633ca842559b63111387a01e0b75d32f88f9c007ce4a6",
+      "translatedAt": "2026-10-27T16:02:16.481Z",
       "enFile": "content/en/perxp/tnexa.mdx",
       "status": "up-to-date"
     },
     "content/fr/perxp/joule.mdx": {
       "checksum": "91bb5c19fbc009bacc5506541f6dad73df53268128c46a2e8361a26fe98ae984",
-      "translatedAt": "2026-10-13T17:41:04.272Z",
+      "translatedAt": "2026-10-27T16:02:16.480Z",
       "enFile": "content/en/perxp/joule.mdx",
       "status": "up-to-date"
     },
     "content/fr/proxp/tnexa.mdx": {
-      "checksum": "8b9d0f947961b15fff7f4384ef972ac975c47cc5c0b9ba77dcd4fd0dced5af86",
-      "translatedAt": "2026-10-13T17:43:16.142Z",
+      "checksum": "b56267e15cb89a5057e9091c6e37195584090147e04cd0d0c1299299d29288af",
+      "translatedAt": "2026-10-27T16:02:16.480Z",
       "enFile": "content/en/proxp/tnexa.mdx",
       "status": "up-to-date"
     }
   },
-  "updatedAt": "2026-10-13T17:43:16.147Z"
+  "updatedAt": "2026-10-27T16:02:16.484Z"
 }
